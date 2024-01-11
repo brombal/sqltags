@@ -1,5 +1,4 @@
 .parcel-cache/
-build/
 coverage/
 node_modules/
 data/

@@ -46,6 +46,10 @@ describe('mysql', () => {
     await sql`DROP TABLE users`;
   });
 
+  afterAll(async () => {
+    connection.end();
+  });
+
   test('insert/select values', async () => {
     await sql`
       INSERT INTO users ${sql.insertValues(testUsers)}
@@ -72,7 +76,23 @@ describe('mysql', () => {
     }
   });
 
-  test('large data set is not loaded into memory', async () => {
+  test('sql error', async () => {
+    await expect(async () => {
+      await sql`SELECT bad syntax`;
+    }).rejects.toThrow("Unknown column 'bad' in 'field list'");
+  });
+
+  test('sql cursor error', async () => {
+    await expect(async () => {
+      const res = sql`SELECT bad syntax`.cursor();
+      for await (const _row of res) {
+        // do nothing
+      }
+    }).rejects.toThrow("Unknown column 'bad' in 'field list'");
+  });
+
+  // The test is really slow (on purpose) so it's skipped by default.
+  test.skip('large data set is not loaded into memory', async () => {
     for (let i = 0; i < 1000; i++) {
       await sql`
         INSERT INTO users ${sql.insertValues(

@@ -23,6 +23,8 @@ const mockSql = (serializeValue?: (value: unknown) => any) =>
       return `\`${identifier.replace(/`/g, '``')}\``;
     },
     query: jest.fn(async (sql: string, params: any[]): Promise<[any[], MockQueryInfo]> => {
+      if (sql === 'SELECT bad syntax') throw new Error('bad syntax');
+
       // mock returns dummy data and sql and params for testing
       return [testUsers, [sql.trim(), ...params]];
     }),
@@ -288,6 +290,14 @@ describe('sql tag', () => {
     `,
       [1],
     ]);
+  });
+
+  test('sql error', async () => {
+    const sql = mockSql();
+
+    await expect(async () => {
+      await sql`SELECT bad syntax`;
+    }).rejects.toThrow('bad syntax');
   });
 
   test('sql expression does not execute if not awaited', async () => {

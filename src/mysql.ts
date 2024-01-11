@@ -2,7 +2,9 @@ import { ReadableStream } from 'stream/web';
 import { Connection, FieldPacket, PoolConnection } from 'mysql2';
 import { SqlTemplateDriver } from './SqlTemplateDriver';
 
-export function mysqlDriver(connection: Connection | PoolConnection): SqlTemplateDriver<FieldPacket[]> {
+export function mysqlDriver(
+  connection: Connection | PoolConnection,
+): SqlTemplateDriver<FieldPacket[]> {
   return {
     parameterizeValue(_value: any, _paramIndex: number) {
       return '?';
@@ -12,16 +14,6 @@ export function mysqlDriver(connection: Connection | PoolConnection): SqlTemplat
     },
     query: async (sql: string, params: any[]): Promise<[any[], FieldPacket[]]> => {
       return new Promise((resolve, reject) => {
-        console.log(connection.query);
-
-        function foo(cb: (x: number) => void) {
-          cb(1);
-        }
-
-        foo((x) => {
-          console.log(x);
-        });
-
         connection.query(sql, params, (err, result, fields) => {
           if (err) {
             reject(err);
@@ -36,13 +28,15 @@ export function mysqlDriver(connection: Connection | PoolConnection): SqlTemplat
 
       const s = new ReadableStream({
         start(controller) {
+          let error = false;
           stream.on('result', (chunk) => {
             controller.enqueue(chunk);
           });
           stream.on('end', () => {
-            controller.close();
+            if (!error) controller.close();
           });
           stream.on('error', (err) => {
+            error = true;
             controller.error(err);
           });
         },
@@ -52,5 +46,5 @@ export function mysqlDriver(connection: Connection | PoolConnection): SqlTemplat
         yield row;
       }
     },
-  }
+  };
 }

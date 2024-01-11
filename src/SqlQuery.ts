@@ -14,7 +14,7 @@ export class SqlQuery<TResult, TQueryInfo> extends Promise<SqlQueryResult<TResul
     super((resolve) => resolve(null!));
   }
 
-  async then<TResult1 = SqlQueryResult<TResult, TQueryInfo>, TResult2 = never>(
+  then<TResult1 = SqlQueryResult<TResult, TQueryInfo>, TResult2 = never>(
     onfulfilled?:
       | ((value: SqlQueryResult<TResult, TQueryInfo>) => TResult1 | PromiseLike<TResult1>)
       | undefined

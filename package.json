@@ -16,11 +16,11 @@
     "node": ">=16.5"
   },
   "source": "src/index.ts",
-  "main": "build/index.js",
-  "module": "build/index.mjs",
-  "types": "build/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "parcel build",
+    "build": "rm -rf dist && parcel build --no-cache",
     "test": "node --expose-gc ./node_modules/.bin/jest --coverage"
   },
   "devDependencies": {
