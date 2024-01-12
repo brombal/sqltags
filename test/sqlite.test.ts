@@ -1,4 +1,5 @@
-import { SqlTag, sqliteDriver } from '../src/index';
+import { SqlTag } from '../core';
+import { sqliteDriver } from '../drivers/sqlite/sqlite';
 import { executeDriverTests } from './driver-tests';
 import s from 'sqlite3';
 

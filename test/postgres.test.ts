@@ -1,4 +1,5 @@
-import { SqlTag, pgDriver } from '../src/index';
+import { SqlTag } from '../core';
+import { pgDriver } from '../drivers/postgres/postgres';
 import { Client, Pool, QueryResult } from 'pg';
 import { executeDriverTests } from './driver-tests';
 

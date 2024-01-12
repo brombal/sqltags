@@ -1,9 +1,6 @@
-import { type SqlTemplateDriver } from '../SqlTemplateDriver';
+import { type SqlTemplateDriver } from '@sqltags/core';
 import { type Client, type Pool, type PoolClient, type QueryResult } from 'pg';
-// import Cursor from 'pg-cursor';
-
-type Cursor<T> = any;
-declare const Cursor: Cursor<any>;
+import Cursor from 'pg-cursor';
 
 function isPool(client: Client | Pool): client is Pool {
   return 'idleCount' in client;

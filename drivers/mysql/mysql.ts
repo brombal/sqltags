@@ -1,6 +1,6 @@
 import { ReadableStream } from 'stream/web';
 import { type Connection, type FieldPacket, type PoolConnection } from 'mysql2';
-import { type SqlTemplateDriver } from '../SqlTemplateDriver';
+import { type SqlTemplateDriver } from '@sqltags/core';
 
 export function mysqlDriver(
   connection: Connection | PoolConnection,

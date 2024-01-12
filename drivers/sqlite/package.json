@@ -1,0 +1,25 @@
+{
+  "name": "@sqltags/sqlite",
+  "version": "1.0.0",
+  "description": "Safely create & execute parameterized SQL queries using template strings 🔧✨ minimal API and works with any db driver (pg, mysql, sqlite, etc).",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.5"
+  },
+  "source": "./sqlite.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && parcel build --no-cache"
+  },
+  "devDependencies": {
+    "sqlite3": "^5.1.7"
+  }
+}

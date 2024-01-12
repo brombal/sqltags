@@ -1,4 +1,4 @@
-import { SqlTag } from '../src';
+import { SqlTag } from '../core';
 
 type User = {
   id: number;

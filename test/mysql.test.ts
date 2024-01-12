@@ -1,7 +1,8 @@
 import mysql, { FieldPacket } from 'mysql2';
 import { faker } from '@faker-js/faker';
 
-import { SqlTag, mysqlDriver } from '../src/index';
+import { SqlTag } from '../core';
+import { mysqlDriver } from '../drivers/mysql/mysql';
 import { executeDriverTests } from './driver-tests';
 
 type User = {

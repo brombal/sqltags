@@ -1,4 +1,4 @@
-import { type SqlTemplateDriver } from '../SqlTemplateDriver';
+import { type SqlTemplateDriver } from '@sqltags/core';
 import { type Database } from 'sqlite3';
 
 export function sqliteDriver(client: Database): SqlTemplateDriver<undefined> {

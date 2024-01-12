@@ -1,4 +1,4 @@
-import { SqlTag, defaultSerializeValue } from '../src/index';
+import { SqlTag, defaultSerializeValue } from '../core';
 
 type MockQueryInfo = [string, ...any[]];
 
