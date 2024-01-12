@@ -12,9 +12,9 @@ services:
     volumes:
       - ./data/mysql:/var/lib/mysql
 
-  postgres:
+  pg:
     image: postgres:16.1
-    container_name: postgres
+    container_name: pg
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -22,4 +22,4 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - ./data/pg:/var/lib/postgresql/data

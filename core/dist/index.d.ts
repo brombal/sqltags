@@ -8,8 +8,8 @@ export declare namespace Callable {
 export interface SqlTemplateDriver<TQueryInfo> {
     /**
      * Returns the string to use for a parameterized value.
-     * E.g. For mysql, you would return `?` for each parameter
-     *      For postgres, you would return `$1`, `$2`, etc.
+     * E.g. For MySQL, you would return `?` for each parameter
+     *      For PostgreSQL, you would return `$1`, `$2`, etc.
      */
     parameterizeValue(value: any, paramIndex: number): string;
     /**

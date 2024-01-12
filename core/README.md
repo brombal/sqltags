@@ -339,7 +339,7 @@ To create a driver, you need to implement the `SqlTemplateDriver` interface:
 interface SqlTemplateDriver<TQueryInfo> {
   /**
    * Returns the string to use for a parameterized value.
-   * E.g. For mysql, you would return `?` for each parameter
+   * E.g. For MySQL, you would return `?` for each parameter
    *      For PostgreSQL, you would return `$1`, `$2`, etc.
    */
   parameterizeValue(value: any, paramIndex: number): string;
