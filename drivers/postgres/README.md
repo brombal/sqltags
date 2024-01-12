@@ -1,12 +1,14 @@
 # <img src="https://raw.githubusercontent.com/brombal/sqltags/v1/sqltags-logo.svg" width="400" alt="sqltags project logo" title="sqltags" />
 
+<br>
+
 ## SQLTags PostgreSQL driver 
 
 This is the **PostgreSQL driver** for the `@sqltags/core` library.
 
 Please refer to the [@sqltags/core project README](https://github.com/brombal/sqltags/#readme) for more information.
 
----
+<br>
 
 ## What is SQLTags?
 
@@ -23,42 +25,42 @@ SELECT * FROM users WHERE id = $1
 -- with parameters: [123]
 ```
 
----
+<br>
 
-### Installation
+## Installation & Usage
+
+Install: 
 
 ```sh
 npm install @sqltags/core @sqltags/pg
 ```
 
-### Usage
+Create & connect your PostgreSQL Client or Pool instance:
 
-1. Create & connect your PostgreSQL Client or Pool instance:
+```ts
+import { Client, Pool } from 'pg';
 
-    ```ts
-    import { Client, Pool } from 'pg';
-    
-    const client = new Client({ /* ... */ });
-    await client.connect();
-   
-    // or:
-   
-    const pool = new Pool({ /* ... */ });
-    ```
+const client = new Client({ /* ... */ });
+await client.connect();
 
-2. Create a `SqlTag` instance:
+// or:
 
-    ```ts
-    import { SqlTag } from '@sqltags/pg';
-    
-    const sql = new SqlTag(client);
-    ```
+const pool = new Pool({ /* ... */ });
+```
 
-3. Query:
+Create a `SqlTag` instance:
 
-    ```ts
-    const [user] = await sql`SELECT * FROM users WHERE id = ${userId}`;
-    ```
+```ts
+import { SqlTag } from '@sqltags/pg';
+
+const sql = new SqlTag(client);
+```
+
+Query:
+
+```ts
+const [user] = await sql`SELECT * FROM users WHERE id = ${userId}`;
+```
 
 Don't forget to disconnect your client when finished!
 
