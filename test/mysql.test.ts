@@ -18,7 +18,7 @@ describe('mysql', () => {
   let connection: mysql.Connection;
   let sql: SqlTag<FieldPacket[]>;
 
-  beforeAll(async () => {
+  beforeAll(() => {
     // Create the connection to database
     connection = mysql.createConnection({
       host: 'localhost',
