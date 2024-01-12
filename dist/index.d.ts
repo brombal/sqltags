@@ -1,4 +1,6 @@
 import { Connection, FieldPacket, PoolConnection } from "mysql2";
+import { Client, Pool, QueryResult } from "pg";
+import { Database } from "sqlite3";
 export function defaultSerializeValue(value: unknown): {} | undefined;
 export declare namespace Callable {
     var call: symbol;
@@ -36,7 +38,7 @@ export interface SqlTemplateDriver<TQueryInfo> {
     cursor(sql: string, params: any[]): AsyncIterable<any>;
 }
 export type SqlExpression = SqlQuery<never, never>;
-type SqlQueryResult<TResult, TQueryInfo> = [TResult[], TQueryInfo];
+type SqlQueryResult<TResult, TQueryInfo> = [TResult[], TQueryInfo, string, any[]];
 export class SqlQuery<TResult, TQueryInfo> extends Promise<SqlQueryResult<TResult, TQueryInfo>> {
     constructor(config: SqlTemplateDriver<any>, templateStrings: string[], values: any[]);
     then<TResult1 = SqlQueryResult<TResult, TQueryInfo>, TResult2 = never>(onfulfilled?: ((value: SqlQueryResult<TResult, TQueryInfo>) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
@@ -53,6 +55,7 @@ export class SqlTag<TQueryInfo> {
     in(column: string, values: any[], ifEmpty?: any): SqlExpression;
     setValues(values: any, ...pickKeys: string[]): SqlExpression;
     insertValues(values: any, ...pickKeys: string[]): SqlExpression;
+    compile(strings: TemplateStringsArray, ...values: any[]): [string, any[]];
 }
 /**
  * Extended definition for the template tag function.
@@ -61,5 +64,7 @@ export interface SqlTag<TQueryInfo> {
     <T>(strings: TemplateStringsArray, ...values: any[]): SqlQuery<T, TQueryInfo>;
 }
 export function mysqlDriver(connection: Connection | PoolConnection): SqlTemplateDriver<FieldPacket[]>;
+export function pgDriver(client: Client | Pool): SqlTemplateDriver<QueryResult>;
+export function sqliteDriver(client: Database): SqlTemplateDriver<undefined>;
 
 //# sourceMappingURL=index.d.ts.map

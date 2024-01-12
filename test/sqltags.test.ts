@@ -35,7 +35,7 @@ const mockSql = (serializeValue?: (value: unknown) => any) =>
     }),
   });
 
-describe('sql tag', () => {
+describe('sqltags', () => {
   test('interpolate value', async () => {
     const sql = mockSql();
     const res = sql<User>`SELECT * FROM users WHERE id = ${1} AND name = ${'bob'}`;
@@ -311,6 +311,14 @@ describe('sql tag', () => {
     await sql`SELECT * FROM users`;
 
     expect(sql.driver.query).toHaveBeenCalledTimes(1);
+  });
+
+  test('compile', async () => {
+    const sql = mockSql();
+
+    const [query, params] = sql.compile`SELECT * FROM users WHERE id = ${1}`;
+    expect(query).toEqual('SELECT * FROM users WHERE id = $1');
+    expect(params).toEqual([1]);
   });
 });
 

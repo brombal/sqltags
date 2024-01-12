@@ -69,6 +69,10 @@ export class SqlTag<TQueryInfo> {
     }
     return this`(${columns}) VALUES ${rows}` as SqlExpression;
   }
+
+  compile(strings: TemplateStringsArray, ...values: any[]) {
+    return new SqlQuery(this.driver, [...strings], values).compile();
+  }
 }
 
 /**

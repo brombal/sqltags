@@ -2,17 +2,13 @@ import mysql, { FieldPacket } from 'mysql2';
 import { faker } from '@faker-js/faker';
 
 import { SqlTag, mysqlDriver } from '../src/index';
+import { executeDriverTests } from './driver-tests';
 
 type User = {
   id: number;
   name: string;
   email: string;
 };
-
-const testUsers: User[] = [
-  { id: 1, name: 'Alex', email: 'alex@example.com' },
-  { id: 2, name: 'Bob', email: 'bob@example.com' },
-];
 
 describe('mysql', () => {
   let connection: mysql.Connection;
@@ -51,45 +47,11 @@ describe('mysql', () => {
   });
 
   test('insert/select values', async () => {
-    await sql`
-      INSERT INTO users ${sql.insertValues(testUsers)}
-    `;
-
-    const [users, info] = await sql<User>`SELECT * FROM users`;
-    expect(users).toEqual(testUsers);
-    expect(info.length).toBe(3);
-    expect(info[0].name).toBe('id');
-    expect(info[0].schema).toBe('db');
-    expect(info[0].table).toBe('users');
-    expect(info[1].name).toBe('name');
-    expect(info[2].name).toBe('email');
+    const [, info] = await sql`SELECT 1`;
+    expect(info.length).toBe(1);
   });
 
-  test('cursor', async () => {
-    await sql`
-      INSERT INTO users ${sql.insertValues(testUsers)}
-    `;
-
-    const users = sql<User>`SELECT * FROM users`.cursor();
-    for await (const user of users) {
-      expect(user).toEqual(testUsers.shift());
-    }
-  });
-
-  test('sql error', async () => {
-    await expect(async () => {
-      await sql`SELECT bad syntax`;
-    }).rejects.toThrow("Unknown column 'bad' in 'field list'");
-  });
-
-  test('sql cursor error', async () => {
-    await expect(async () => {
-      const res = sql`SELECT bad syntax`.cursor();
-      for await (const _row of res) {
-        // do nothing
-      }
-    }).rejects.toThrow("Unknown column 'bad' in 'field list'");
-  });
+  executeDriverTests('mysql', () => sql);
 
   // The test is really slow (on purpose) so it's skipped by default.
   test.skip('large data set is not loaded into memory', async () => {

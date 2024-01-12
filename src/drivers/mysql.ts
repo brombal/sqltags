@@ -1,6 +1,6 @@
 import { ReadableStream } from 'stream/web';
-import { Connection, FieldPacket, PoolConnection } from 'mysql2';
-import { SqlTemplateDriver } from './SqlTemplateDriver';
+import { type Connection, type FieldPacket, type PoolConnection } from 'mysql2';
+import { type SqlTemplateDriver } from '../SqlTemplateDriver';
 
 export function mysqlDriver(
   connection: Connection | PoolConnection,
@@ -9,9 +9,11 @@ export function mysqlDriver(
     parameterizeValue(_value: any, _paramIndex: number) {
       return '?';
     },
+
     escapeIdentifier(identifier: string) {
       return `\`${identifier.replace(/`/g, '``')}\``;
     },
+
     query: async (sql: string, params: any[]): Promise<[any[], FieldPacket[]]> => {
       return new Promise((resolve, reject) => {
         connection.query(sql, params, (err, result, fields) => {
@@ -23,6 +25,7 @@ export function mysqlDriver(
         });
       });
     },
+
     cursor: async function* (_sql: string, _params: any[]): AsyncIterable<any> {
       const stream = connection.query(_sql, _params);
 

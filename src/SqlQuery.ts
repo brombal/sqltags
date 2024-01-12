@@ -3,7 +3,7 @@ import { type SqlTemplateDriver } from './SqlTemplateDriver';
 
 export type SqlExpression = SqlQuery<never, never>;
 
-export type SqlQueryResult<TResult, TQueryInfo> = [TResult[], TQueryInfo];
+export type SqlQueryResult<TResult, TQueryInfo> = [TResult[], TQueryInfo, string, any[]];
 
 export class SqlQuery<TResult, TQueryInfo> extends Promise<SqlQueryResult<TResult, TQueryInfo>> {
   constructor(
@@ -22,7 +22,9 @@ export class SqlQuery<TResult, TQueryInfo> extends Promise<SqlQueryResult<TResul
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
   ): Promise<TResult1 | TResult2> {
     const [text, params] = this.compile();
-    return this.config.query(text, params).then(onfulfilled, onrejected);
+    return this.config.query(text, params).then(([rows, queryInfo]) => {
+      return onfulfilled!([rows, queryInfo, text, params]);
+    }, onrejected);
   }
 
   compile(params?: any[]): [string, any[]] {

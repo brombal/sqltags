@@ -2,5 +2,5 @@
 module.exports = {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
-  testTimeout: 120000,
+  testTimeout: 5000,
 };
