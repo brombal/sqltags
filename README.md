@@ -23,7 +23,7 @@ SELECT * FROM users WHERE id = ?
 - Includes full TypeScript support (including generic types for query results)
 - Supports any database driver (includes built-in drivers for
   [MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/README.md),
-  [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/pg/README.md), and
+  [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/postgres/README.md), and
   [SQLite](https://github.com/brombal/sqltags/blob/main/drivers/sqlite/README.md), but you can
   easily create your own)
 - 100% test coverage
@@ -36,7 +36,7 @@ SELECT * FROM users WHERE id = ?
 
 - [Installation](#Installation)
   - [MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/README.md)
-  - [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/pg/README.md)
+  - [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/postgres/README.md)
   - [SQLite](https://github.com/brombal/sqltags/blob/main/drivers/sqlite/README.md)
 - [Querying](#Querying)
 - [Cursors](#Cursors)
@@ -86,7 +86,7 @@ const sql = new SqlTag(client);
 For documentation on the driver-specific setup, check out their readme pages:
 
 - [MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/README.md)
-- [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/pg/README.md)
+- [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/postgres/README.md)
 - [SQLite](https://github.com/brombal/sqltags/blob/main/drivers/sqlite/README.md)
 
 ## Querying
@@ -375,21 +375,22 @@ A SQL tag is just a thin wrapper around a database client. Any database client l
 parameterized queries can be used with SQLTags.
 
 To create a tag for a new database client, you need to implement a subclass of the abstract
-`SqlTagBase` class. This class defines the methods that SQLTags needs to interact with the database
-driver. The class is defined and documented
+`SqlTagBase` class. This abstract class defines the methods that SQLTags needs to interact with the
+database driver. It is defined and documented
 [here](https://github.com/brombal/sqltags/blob/main/core/SqlTagAbstractBase.ts), and you can see
 example implementations for
 [MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/mysql.ts),
-[PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/pg/pg.ts), and
+[PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/postgres/postgres.ts), and
 [SQLite](https://github.com/brombal/sqltags/blob/main/drivers/sqlite/sqlite.ts).
 
-Your `SqlTagBase` subclass will probably accept a database connection object as a constructor
-parameter, and will use that connection object to execute queries or create cursors. The subclass
-should also define the TypeScript type for the additional query response information (such as rows
-updated/inserted, column definitions, etc).
+Your subclass will probably accept a database connection object as a constructor parameter, and will
+use that connection object to execute queries or create cursors. The subclass should also define the
+TypeScript type for the additional query response information (such as rows updated/inserted, column
+definitions, etc).
 
 Here is an example pseudo implementation for a fake database driver library. The purpose of each
-implemented method is further described in the `SqlTagAbstractBase` class definition.
+implemented method is further described in the `SqlTagAbstractBase`
+[class definition](https://github.com/brombal/sqltags/blob/main/core/SqlTagAbstractBase.ts).
 
 ```ts
 import { SqlTagBase } from '@sqltags/core';
@@ -397,8 +398,8 @@ import { DatabaseConnection, QueryInfo } from 'cool-database-library';
 
 export class CoolSqlTag extends SqlTagBase<QueryInfo> {
   //                                       ^^
-  // The generic type specifies the type of the
-  // additional query response information.
+  //                                       The type parameter specifies the type of the
+  //                                       additional query response information.
 
   constructor(private db: DatabaseConnection) {
     super();

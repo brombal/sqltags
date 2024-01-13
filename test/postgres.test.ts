@@ -1,5 +1,5 @@
 import { SqlTag } from '../drivers/postgres/postgres';
-import { Client, Pool, QueryResult } from 'pg';
+import { Client, Pool } from 'pg';
 import { executeDriverTests } from './driver-tests';
 
 describe('pg client', () => {

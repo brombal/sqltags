@@ -347,7 +347,7 @@ is defined and documented
 [here](https://github.com/brombal/sqltags/blob/main/core/SqlTagAbstractBase.ts), and you can see
 example implementations for
 [MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/mysql.ts),
-[PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/pg/pg.ts), and
+[PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/postgres/postgres.ts), and
 [SQLite](https://github.com/brombal/sqltags/blob/main/drivers/sqlite/sqlite.ts).
 
 A `SqlTag` subclass will generally accept some kind of database connection object as a constructor
