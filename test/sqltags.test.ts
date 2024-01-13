@@ -1,4 +1,4 @@
-import { SqlTag, defaultSerializeValue } from '../core';
+import { SqlTagBase, defaultSerializeValue } from '../core';
 
 type MockQueryInfo = [string, ...any[]];
 
@@ -13,27 +13,35 @@ const testUsers: User[] = [
   { id: 2, name: 'Bob', email: 'bob@example.com' },
 ];
 
-const mockSql = (serializeValue?: (value: unknown) => any) =>
-  new SqlTag<MockQueryInfo>({
+const mockSql = (serializeValue?: (value: unknown) => any) =>{
+  class MockSqlTag extends SqlTagBase<MockQueryInfo> {
     parameterizeValue(_value: any, paramIndex: number) {
       return `$${paramIndex + 1}`;
-    },
-    serializeValue,
+    }
+    serializeValue(value: any) {
+      return serializeValue ? serializeValue(value) : defaultSerializeValue(value);
+    }
     escapeIdentifier(identifier: string) {
       return `\`${identifier.replace(/`/g, '``')}\``;
-    },
-    query: jest.fn(async (sql: string, params: any[]): Promise<[any[], MockQueryInfo]> => {
+    }
+    async query (sql: string, params: any[]): Promise<[any[], MockQueryInfo]> {
       if (sql === 'SELECT bad syntax') throw new Error('bad syntax');
-
       // mock returns dummy data and sql and params for testing
       return [testUsers, [sql.trim(), ...params]];
-    }),
-    cursor: jest.fn(async function* (_sql: string, _params: any[]): AsyncIterable<any> {
+    }
+    async* cursor(_sql: string, _params: any[]): AsyncIterable<any> {
       for (const user of testUsers) {
         yield user;
       }
-    }),
-  });
+    }
+  }
+
+  // mock query and cursor method
+  MockSqlTag.prototype.query = jest.fn(MockSqlTag.prototype.query);
+  MockSqlTag.prototype.cursor = jest.fn(MockSqlTag.prototype.cursor);
+
+  return new MockSqlTag();
+}
 
 describe('sqltags', () => {
   test('interpolate value', async () => {
@@ -42,7 +50,7 @@ describe('sqltags', () => {
     const [users, info] = await res;
     expect(users).toEqual(testUsers);
     expect(info).toEqual(['SELECT * FROM users WHERE id = $1 AND name = $2', 1, 'bob']);
-    expect(sql.driver.query).toHaveBeenCalledTimes(1);
+    expect(sql.query).toHaveBeenCalledTimes(1);
   });
 
   test('interpolate identifier', async () => {
@@ -59,7 +67,7 @@ describe('sqltags', () => {
       await sql<User>`SELECT * FROM users ${sql`WHERE id = ${1}`} ${sql`AND name = ${'bob'}`}`;
     expect(users).toEqual(testUsers);
     expect(info).toEqual(['SELECT * FROM users WHERE id = $1 AND name = $2', 1, 'bob']);
-    expect(sql.driver.query).toHaveBeenCalledTimes(1);
+    expect(sql.query).toHaveBeenCalledTimes(1);
   });
 
   test('interpolate undefined', async () => {
@@ -306,11 +314,11 @@ describe('sqltags', () => {
     sql`SELECT * FROM users`;
     await new Promise((resolve) => setTimeout(() => resolve(null), 100));
 
-    expect(sql.driver.query).toHaveBeenCalledTimes(0);
+    expect(sql.query).toHaveBeenCalledTimes(0);
 
     await sql`SELECT * FROM users`;
 
-    expect(sql.driver.query).toHaveBeenCalledTimes(1);
+    expect(sql.query).toHaveBeenCalledTimes(1);
   });
 
   test('compile', async () => {

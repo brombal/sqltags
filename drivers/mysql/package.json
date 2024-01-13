@@ -30,6 +30,7 @@
     "build": "rm -rf dist && parcel build --no-cache"
   },
   "dependencies": {
-    "mysql2": "^3.7.0"
+    "mysql2": "^3.7.0",
+    "@sqltags/core": "*"
   }
 }

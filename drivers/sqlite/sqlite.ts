@@ -1,80 +1,79 @@
-import { type SqlTemplateDriver } from '@sqltags/core';
+import { SqlTagBase } from '@sqltags/core';
 import { type Database } from 'sqlite3';
 
-export function sqliteDriver(client: Database): SqlTemplateDriver<undefined> {
-  return {
-    parameterizeValue(_value: any, _paramIndex: number) {
-      return `?`;
-    },
+export class SqlTag extends SqlTagBase<undefined> {
+  constructor(private client: Database) {
+    super();
+  }
 
-    escapeIdentifier(identifier: string) {
-      return '"' + identifier.replace(/"/g, '""') + '"';
-    },
-
-    query: async (sql: string, params: any[]): Promise<[any[], undefined]> => {
-      const res: any[] = await new Promise((resolve, reject) => {
-        client.all(sql, params, (err, rows: any[]) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(rows);
-          }
-        });
+  parameterizeValue(value: any, paramIndex: number): string {
+    return `?`;
+  }
+  escapeIdentifier(identifier: string): string {
+    return '"' + identifier.replace(/"/g, '""') + '"';
+  }
+  async query(sql: string, params: any[]): Promise<[any[], undefined]> {
+    const res: any[] = await new Promise((resolve, reject) => {
+      this.client.all(sql, params, (err, rows: any[]) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
       });
-      return [res, undefined];
-    },
+    });
+    return [res, undefined];
+  }
+  cursor(sql: string, params: any[]): AsyncIterable<any> {
+    let started = false;
+    let resolver: ((value: any) => void) | undefined;
+    let rejecter: ((value: any) => void) | undefined;
+    const queue: any[] = [];
+    return {
+      [Symbol.asyncIterator]: () => ({
+        next: async () => {
+          if (!started) {
+            this.client.each(
+              sql,
+              params,
+              (err, row) => {
+                // There is no case I could find where this would be called with an error, but the docs say it might
+                // istanbul ignore if
+                if (err) {
+                  rejecter!(err);
+                } else {
+                  queue.push(row);
+                  resolver!(row);
+                }
+              },
+              (err) => {
+                if (err) rejecter!(err);
+                else {
+                  queue.push(undefined);
+                  resolver!(undefined);
+                }
+                rejecter = undefined;
+                resolver = undefined;
+              },
+            );
+            started = true;
+          }
 
-    cursor: function (sql: string, params: any[]): AsyncIterable<any> {
-      let started = false;
-      let resolver: ((value: any) => void) | undefined;
-      let rejecter: ((value: any) => void) | undefined;
-      const queue = [] as any[];
-      return {
-        [Symbol.asyncIterator]: () => ({
-          next: async () => {
-            if (!started) {
-              client.each(
-                sql,
-                params,
-                (err, row) => {
-                  // There is no case I could find where this would be called with an error, but the docs say it might
-                  // istanbul ignore if
-                  if (err) {
-                    rejecter!(err);
-                  } else {
-                    queue.push(row);
-                    resolver!(row);
-                  }
-                },
-                (err) => {
-                  if (err) rejecter!(err);
-                  else {
-                    queue.push(undefined);
-                    resolver!(undefined);
-                  }
-                  rejecter = undefined;
-                  resolver = undefined;
-                },
-              );
-              started = true;
-            }
+          if (!queue.length) {
+            await new Promise((resolve, reject) => {
+              resolver = resolve;
+              rejecter = reject;
+            });
+          }
 
-            if (!queue.length) {
-              await new Promise((resolve, reject) => {
-                resolver = resolve;
-                rejecter = reject;
-              });
-            }
+          if (queue.length > 0) {
+            const row = queue.shift();
+            if (row !== undefined) return { done: false, value: row };
+          }
 
-            if (queue.length > 0) {
-              const row = queue.shift();
-              if (row !== undefined) return { done: false, value: row };
-            }
-
-            return { done: true, value: undefined };
-          },
-        }),
-      };
-    },
-  };
+          return { done: true, value: undefined };
+        },
+      }),
+    };
+  }
 }

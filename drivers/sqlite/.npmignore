@@ -1,0 +1,3 @@
+# ignore all ts files except the ones in the dist folder
+*.ts
+!dist/**/*

@@ -1,5 +1,5 @@
 import { defaultSerializeValue } from './util';
-import { type SqlTemplateDriver } from './SqlTemplateDriver';
+import { type SqlTagAbstractBase } from './SqlTagAbstractBase';
 
 export type SqlExpression = SqlQuery<never, never>;
 
@@ -7,7 +7,7 @@ export type SqlQueryResult<TResult, TQueryInfo> = [TResult[], TQueryInfo, string
 
 export class SqlQuery<TResult, TQueryInfo> extends Promise<SqlQueryResult<TResult, TQueryInfo>> {
   constructor(
-    private config: SqlTemplateDriver<any>,
+    private driver: SqlTagAbstractBase<any>,
     private templateStrings: string[],
     private values: any[],
   ) {
@@ -22,7 +22,7 @@ export class SqlQuery<TResult, TQueryInfo> extends Promise<SqlQueryResult<TResul
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
   ): Promise<TResult1 | TResult2> {
     const [text, params] = this.compile();
-    return this.config.query(text, params).then(([rows, queryInfo]) => {
+    return this.driver.query(text, params).then(([rows, queryInfo]) => {
       return onfulfilled!([rows, queryInfo, text, params]);
     }, onrejected);
   }
@@ -41,10 +41,8 @@ export class SqlQuery<TResult, TQueryInfo> extends Promise<SqlQueryResult<TResul
         const [subSql] = value.compile(params);
         sql += subSql;
       } else {
-        const serializedValue = this.config.serializeValue
-          ? this.config.serializeValue(value)
-          : defaultSerializeValue(value);
-        sql += this.config.parameterizeValue(serializedValue, params.length);
+        const serializedValue = this.driver.serializeValue(value);
+        sql += this.driver.parameterizeValue(serializedValue, params.length);
         params.push(serializedValue);
       }
     }
@@ -54,6 +52,6 @@ export class SqlQuery<TResult, TQueryInfo> extends Promise<SqlQueryResult<TResul
 
   cursor(): AsyncIterable<TResult> {
     const [sql, params] = this.compile();
-    return this.config.cursor(sql, params);
+    return this.driver.cursor(sql, params);
   }
 }

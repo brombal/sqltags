@@ -1,1 +1,0 @@
-export { SqlTag } from './postgres';

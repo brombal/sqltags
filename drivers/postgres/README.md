@@ -2,11 +2,12 @@
 
 <br>
 
-## SQLTags PostgreSQL driver 
+## SQLTags PostgreSQL driver
 
 This is the **PostgreSQL driver** for the `@sqltags/core` library.
 
-Please refer to the [@sqltags/core project README](https://github.com/brombal/sqltags/#readme) for more information.
+Please refer to the [@sqltags/core project README](https://github.com/brombal/sqltags/#readme) for
+more information.
 
 <br>
 
@@ -29,31 +30,33 @@ SELECT * FROM users WHERE id = $1
 
 ## Installation & Usage
 
-Install: 
+Install:
 
 ```sh
 npm install @sqltags/core @sqltags/pg
 ```
 
-Create & connect your PostgreSQL Client or Pool instance:
+Create & connect a PostgreSQL Client or Pool instance, and a `SqlTag` instance with the connection:
 
 ```ts
-import { Client, Pool } from 'pg';
-
-const client = new Client({ /* ... */ });
-await client.connect();
-
-// or:
-
-const pool = new Pool({ /* ... */ });
-```
-
-Create a `SqlTag` instance:
-
-```ts
+import { Client } from 'pg';
 import { SqlTag } from '@sqltags/pg';
 
+const client = new Client({
+  /* ... */
+});
+await client.connect();
 const sql = new SqlTag(client);
+```
+
+```ts
+import { Pool } from 'pg';
+import { SqlTag } from '@sqltags/pg';
+
+const pool = new Pool({
+  /* ... */
+});
+const sql = new SqlTag(pool);
 ```
 
 Query:

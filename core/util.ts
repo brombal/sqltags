@@ -5,12 +5,13 @@ export function defaultSerializeValue(value: unknown) {
 }
 
 export function Callable(obj: any) {
-  return Object.assign(
+  const c = Object.assign(
     Object.setPrototypeOf(function callable(...args: any[]) {
-      return obj[Callable.call](...args);
+      return c[Callable.call](...args);
     }, obj.constructor.prototype),
     obj,
   );
+  return c;
 }
 
 Callable.call = Symbol('_call');

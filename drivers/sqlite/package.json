@@ -19,17 +19,11 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
   "scripts": {
     "build": "rm -rf dist && parcel build --no-cache"
   },
-  "devDependencies": {
+  "dependencies": {
+    "@sqltags/core": "*",
     "sqlite3": "^5.1.7"
   }
 }

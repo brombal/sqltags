@@ -1,8 +1,7 @@
-import mysql, { FieldPacket } from 'mysql2';
+import mysql from 'mysql2';
 import { faker } from '@faker-js/faker';
 
-import { SqlTag } from '../core';
-import { mysqlDriver } from '../drivers/mysql/mysql';
+import { SqlTag } from '../drivers/mysql/mysql';
 import { executeDriverTests } from './driver-tests';
 
 type User = {
@@ -13,7 +12,7 @@ type User = {
 
 describe('mysql', () => {
   let connection: mysql.Connection;
-  let sql: SqlTag<FieldPacket[]>;
+  let sql: SqlTag
 
   beforeAll(() => {
     // Create the connection to database
@@ -24,7 +23,7 @@ describe('mysql', () => {
       database: 'db',
     });
 
-    sql = new SqlTag(mysqlDriver(connection));
+    sql = new SqlTag(connection);
   });
 
   beforeEach(async () => {

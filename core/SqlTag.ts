@@ -1,27 +1,28 @@
 import { SqlQuery, type SqlExpression } from './SqlQuery';
-import { type SqlTemplateDriver } from './SqlTemplateDriver';
+import { SqlTagAbstractBase } from './SqlTagAbstractBase';
 import { Callable } from './util';
 
-export class SqlTag<TQueryInfo> {
-  constructor(public driver: SqlTemplateDriver<TQueryInfo>) {
+export abstract class SqlTagBase<TQueryInfo> extends SqlTagAbstractBase<TQueryInfo> {
+  constructor() {
+    super();
     return Callable(this);
   }
 
   [Callable.call]<T>(strings: TemplateStringsArray, ...values: any[]) {
-    return new SqlQuery<T, TQueryInfo>(this.driver, [...strings], values);
+    return new SqlQuery<T, TQueryInfo>(this, [...strings], values);
   }
 
   join(values: any[], joinWith = ', '): SqlExpression {
     const filteredValues = values.filter((value) => value !== undefined);
     return new SqlQuery(
-      this.driver,
+      this,
       ['', ...Array(filteredValues.length - 1).fill(joinWith), ''],
       filteredValues,
     );
   }
 
   id(identifier: string): SqlExpression {
-    return new SqlQuery(this.driver, [this.driver.escapeIdentifier(identifier)], []);
+    return new SqlQuery(this, [this.escapeIdentifier(identifier)], []);
   }
 
   and(...values: any[]): SqlExpression {
@@ -71,13 +72,13 @@ export class SqlTag<TQueryInfo> {
   }
 
   compile(strings: TemplateStringsArray, ...values: any[]) {
-    return new SqlQuery(this.driver, [...strings], values).compile();
+    return new SqlQuery(this, [...strings], values).compile();
   }
 }
 
 /**
  * Extended definition for the template tag function.
  */
-export interface SqlTag<TQueryInfo> {
+export interface SqlTagBase<TQueryInfo> {
   <T>(strings: TemplateStringsArray, ...values: any[]): SqlQuery<T, TQueryInfo>;
 }

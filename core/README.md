@@ -4,10 +4,13 @@
 
 ```ts
 const [user] = await sql`SELECT * FROM users WHERE id = ${userId}`;
+```
 
-// Results in:
-// SELECT * FROM users WHERE id = ?
-// with parameters: [123]
+Results in the following query:
+
+```sql
+SELECT * FROM users WHERE id = ?
+-- with parameters: [123]
 ```
 
 **Features:**
@@ -24,27 +27,33 @@ const [user] = await sql`SELECT * FROM users WHERE id = ${userId}`;
 - Lightweight (no dependencies)
 - MIT licensed
 
+<br>
+
 ## Installation
 
-```sh
-npm install sqltags
-```
+Choose the driver for your database flavor:
 
-Create a **template tag** by using one of the built-in database client drivers (this example is
-MySQL, but there are also [other drivers](#database-drivers) for PostgreSQL and SQLite, or you can
-[create your own](#creating-database-drivers)):
+- `npm install @sqltags/pg`
+- `npm install @sqltags/mysql`
+- `npm install @sqltags/sqlite`
+- Or [create your own](#creating-database-drivers) with `npm install @sqltags/core`
+
+Then, create a **template tag** using the `SqlTag` constructor from your chosen driver library.
+
+Here's an example using MySQL (there are [other drivers](#database-drivers) for PostgreSQL and
+SQLite, or you can [create your own](#creating-database-drivers)):
 
 ```ts
-import { SqlTag, mysqlDriver } from 'sqltags';
+import { SqlTag } from '@sqltags/mysql';
 import mysql from 'mysql2';
 
-// You can use your existing connection object, e.g.:
-const connection = mysql.createConnection({
+// Create your connection object, e.g.:
+const client = mysql.createConnection({
   /* ... */
 });
 
 // Create the sql tag, using the mysql driver and your connection:
-export const sql = new SqlTag<FieldPacket[]>(mysqlDriver(connection));
+const sql = new SqlTag(client);
 ```
 
 ## Querying
@@ -61,8 +70,8 @@ information, or number of affected rows, etc).
 
 ## Cursors
 
-To reduce memory usage, it is possible to execute a query and fetch rows one at a time, instead of
-all at once using a cursor. To get a cursor, use the `.cursor()` method on a tagged query string.
+To reduce memory usage, it is possible to execute a query and fetch rows one at a time (instead of
+all at once) using a cursor. To get a cursor, use the `.cursor()` method on a tagged query string.
 This returns an `AsyncIterable` that can be iterated using a `for await ... of` loop.
 
 ```ts
@@ -93,7 +102,7 @@ const [users, details] = await sql<User>`SELECT * FROM users`;
 // users is of type User[]
 ```
 
-The type of `details` is defined by the driver that is passed to the `new SqlTag()` constructor.
+The type of `details` is defined by the driver.
 
 ## Building SQL queries
 
@@ -147,8 +156,8 @@ const [rows] = await sql`
 
 ### Concatenating SQL expressions
 
-**Note** that the return value of a SQL tag is **not a string**, so you **cannot** concatenate them using the `+`
-operator.
+**Note** that the return value of a SQL tag is **not a string**, so you **cannot** concatenate them
+using the `+` operator.
 
 ```js
 const query = sql`SELECT * FROM users`;
@@ -203,13 +212,13 @@ const [rows] = await sql`
   SELECT *
   FROM users
   WHERE ${sql.and(
-    userId ? sql`id = ${userId}` : undefined,
-    sql.or(
-      sql`status = 'active'`,
-      sql`status = 'pending'`,
-      // ...
-    ),
-  )}
+        userId ? sql`id = ${userId}` : undefined,
+        sql.or(
+                sql`status = 'active'`,
+                sql`status = 'pending'`,
+                // ...
+        ),
+)}
 `;
 
 // Results in:
@@ -302,10 +311,10 @@ appropriate:
 ```js
 const [rows] = await sql`
   SELECT ${sql.join([
-    sql.id('id'),
-    sql.id('email'),
-    sql`CASE WHEN status = ${'active'} THEN ${1} ELSE ${0} END as active`,
-  ])}
+  sql.id('id'),
+  sql.id('email'),
+  sql`CASE WHEN status = ${'active'} THEN ${1} ELSE ${0} END as active`,
+])}
   FROM users
 `;
 ```
@@ -317,56 +326,88 @@ argument:
 const [rows] = await sql`
   SELECT * FROM users 
   WHERE ${sql.join(
-    [
-      // Better to use `sql.and()` for this, but just for example:
-      sql`id = ${userId}`,
-      sql`status = 'active'`,
-    ],
-    ' AND ',
-  )}
+        [
+          // Better to use `sql.and()` for this, but just for example:
+          sql`id = ${userId}`,
+          sql`status = 'active'`,
+        ],
+        ' AND ',
+)}
 `;
 ```
 
 ## Creating database drivers
 
-SQL Builder is just a thin wrapper around a database driver client. As long as the driver supports
-parameterized queries, it can be used with SQL Builder.
+SQL Builder is just a thin wrapper around a database client. Any database client library
+that supports parameterized queries can be used with SQLTags.
 
-To create a driver, you need to implement the `SqlTemplateDriver` interface:
+To create a driver, you need to implement a subclass of the abstract `SqlTagBase` class. This class
+defines the abstract methods that SQL Builder uses to interact with the database driver. The class
+is defined and documented
+[here](https://github.com/brombal/sqltags/blob/main/core/SqlTagAbstractBase.ts), and you can see
+example implementations for
+[MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/mysql.ts),
+[PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/pg/pg.ts), and
+[SQLite](https://github.com/brombal/sqltags/blob/main/drivers/sqlite/sqlite.ts).
+
+A `SqlTag` subclass will generally accept some kind of database connection object as a constructor
+parameter, and will use that connection object to execute queries or create cursors. The subclass
+will also define the type for the additional query response information (such as rows
+updated/inserted, column definitions, etc).
+
+Here is an example pseudo implementation for a fake database driver library. All of the implemented
+methods are further described in the `SqlTagAbstractBase` class definition.
 
 ```ts
-// From SqlTemplateDriver.ts:
-interface SqlTemplateDriver<TQueryInfo> {
-  /**
-   * Returns the string to use for a parameterized value.
-   * E.g. For MySQL, you would return `?` for each parameter
-   *      For PostgreSQL, you would return `$1`, `$2`, etc.
-   */
-  parameterizeValue(value: any, paramIndex: number): string;
+import { SqlTagBase } from '@sqltags/core';
+import { DatabaseConnection, QueryInfo } from 'some-database-library';
 
-  /**
-   * Serializes values that cannot be passed as parameters to the driver (e.g. arrays, objects, etc.)
-   * By default, objects and arrays are serialized as JSON strings. Dates are serialized using .toISOString().
-   * All other values are unchanged.
-   *
-   * If you implement this method and wish to use the default behavior, you can use the
-   * defaultSerializeValue() helper.
-   */
-  serializeValue?(value: unknown): any;
+export class SqlTag extends SqlTagBase<QueryInfo> {
+  //                                  ^^ The generic type parameter specifies the type
+  //                                     of the additional query response information:
 
-  /**
-   * Escapes an identifier (e.g. a table or column name).
-   */
-  escapeIdentifier(identifier: string): string;
+  constructor(private db: DatabaseConnection) {
+    super();
+  }
 
-  /**
-   * Executes a parameterized query and returns the results.
-   */
-  query(sql: string, params: any[]): Promise<[any[], TQueryInfo]>;
+  parameterizeValue(value: any, paramIndex: number): string {
+    return `$${paramIndex}`; // $1, $2, $3, etc.
+  }
 
-  /**
-   * Executes a parameterized query and returns an async iterator that yields the results.
-   */
-  cursor(sql: string, params: any[]): AsyncIterable<any>;
+  serializeValue(value: unknown): any {
+    return super.serializeValue(value);
+  }
+
+  escapeIdentifier(identifier: string): string {
+    return `"${identifier.replaceAll('"', '""')}"`; // e.g. "my_terrible""_table_name"
+  }
+
+  async query(sql: string, params: any[]): Promise<[any[], TQueryInfo]> {
+    const res = await this.db.query(sql, params);
+    // res.rows contains the array of row objects
+    // res.info is a "QueryInfo" object, as defined by the database driver
+    return [res.rows, res.info];
+  }
+
+  async *cursor(sql: string, params: any[]): AsyncIterable<any> {
+    const cursor = this.db.cursor(sql, params);
+    // In a perfect scenario, the database driver would offer cursor support like this;
+    // but it's often tricker to implement. Check out the PostgreSQL/MySQL/SQLite drivers for examples.
+    for await (const row of cursor) {
+      yield row;
+    }
+  }
 }
+```
+
+Then create an instance of your tag, and start querying:
+
+```ts
+const db = new DatabaseConnection({
+  /* ... */
+});
+const sql = new SqlTag(db);
+
+// Query!
+await sql`SELECT * FROM users WHERE id = ${userId}`;
 ```

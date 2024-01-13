@@ -1,15 +1,14 @@
-import { SqlTag } from '../core';
-import { sqliteDriver } from '../drivers/sqlite/sqlite';
+import { SqlTag } from '../drivers/sqlite/sqlite';
 import { executeDriverTests } from './driver-tests';
 import s from 'sqlite3';
 
 describe('sqlite client', () => {
   const db = new s.Database(':memory:');
 
-  let sql: SqlTag<undefined>;
+  let sql: SqlTag;
 
   beforeAll(async () => {
-    sql = new SqlTag(sqliteDriver(db));
+    sql = new SqlTag(db);
   });
 
   afterAll(async () => {});
@@ -17,7 +16,6 @@ describe('sqlite client', () => {
   beforeEach(async () => {
     await sql`DROP TABLE IF EXISTS users`;
     await sql`
-      -- sqlite
       CREATE TABLE users (
         id INT NOT NULL,
         name VARCHAR(255) NOT NULL,
