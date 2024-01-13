@@ -21,13 +21,40 @@ SELECT * FROM users WHERE id = ?
   `field IN (...)`, and updates/inserts.
 - Supports promises and cursors for efficient memory usage
 - Includes full TypeScript support (including generic types for query results)
-- Supports any database driver (includes built-in drivers for MySQL, PostgreSQL, and SQLite, but you
-  can easily create your own)
+- Supports any database driver (includes built-in drivers for
+  [MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/README.md),
+  [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/postgres/README.md), and
+  [SQLite](https://github.com/brombal/sqltags/blob/main/drivers/sqlite/README.md), but you can
+  easily create your own)
 - 100% test coverage
 - Lightweight (no dependencies)
 - MIT licensed
 
-<br>
+---
+
+## Contents
+
+- [Installation](#Installation)
+  - [MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/README.md)
+  - [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/postgres/README.md)
+  - [SQLite](https://github.com/brombal/sqltags/blob/main/drivers/sqlite/README.md)
+- [Querying](#Querying)
+- [Cursors](#Cursors)
+- [TypeScript](#TypeScript)
+- [Building SQL queries](#Building-SQL-queries)
+  - [Parameterized values](#Parameterized-values)
+  - [Identifiers](#Identifiers)
+  - [Nested SQL expressions](#Nested-SQL-expressions)
+  - [Concatenating SQL expressions](#Concatenating-SQL-expressions)
+  - [SQL expression helpers](#SQL-expression-helpers)
+    - [AND and OR expressions](#AND-and-OR-expressions)
+    - [UPDATE expressions](#UPDATE-expressions)
+    - [INSERT expressions](#INSERT-expressions)
+    - [IN expressions](#IN-expressions)
+    - [Joining/concatenating values](#Joiningconcatenating-values)
+- [Creating SQLTags for other databases](#Creating-SQLTags-for-other-databases)
+
+---
 
 ## Installation
 
@@ -36,12 +63,12 @@ Choose the driver for your database flavor:
 - `npm install @sqltags/pg`
 - `npm install @sqltags/mysql`
 - `npm install @sqltags/sqlite`
-- Or [create your own](#creating-database-drivers) with `npm install @sqltags/core`
+- Or [create your own](#Creating-SQLTags-for-other-databases) with `npm install @sqltags/core`
 
 Then, create a **template tag** using the `SqlTag` constructor from your chosen driver library.
 
-Here's an example using MySQL (there are [other drivers](#database-drivers) for PostgreSQL and
-SQLite, or you can [create your own](#creating-database-drivers)):
+Here's an example using MySQL (there are other drivers for PostgreSQL and SQLite, or you can
+[create your own](#Creating-SQLTags-for-other-databases)):
 
 ```ts
 import { SqlTag } from '@sqltags/mysql';
@@ -55,6 +82,12 @@ const client = mysql.createConnection({
 // Create the sql tag, using the mysql driver and your connection:
 const sql = new SqlTag(client);
 ```
+
+For documentation on the driver-specific setup, check out their readme pages:
+
+- [MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/README.md)
+- [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/postgres/README.md)
+- [SQLite](https://github.com/brombal/sqltags/blob/main/drivers/sqlite/README.md)
 
 ## Querying
 
@@ -106,7 +139,7 @@ The type of `details` is defined by the driver.
 
 ## Building SQL queries
 
-### Escaping values
+### Parameterized values
 
 The SQL tag will automatically parameterize values that are interpolated into the query.
 
@@ -212,13 +245,13 @@ const [rows] = await sql`
   SELECT *
   FROM users
   WHERE ${sql.and(
-        userId ? sql`id = ${userId}` : undefined,
-        sql.or(
-                sql`status = 'active'`,
-                sql`status = 'pending'`,
-                // ...
-        ),
-)}
+    userId ? sql`id = ${userId}` : undefined,
+    sql.or(
+      sql`status = 'active'`,
+      sql`status = 'pending'`,
+      // ...
+    ),
+  )}
 `;
 
 // Results in:
@@ -311,10 +344,10 @@ appropriate:
 ```js
 const [rows] = await sql`
   SELECT ${sql.join([
-  sql.id('id'),
-  sql.id('email'),
-  sql`CASE WHEN status = ${'active'} THEN ${1} ELSE ${0} END as active`,
-])}
+    sql.id('id'),
+    sql.id('email'),
+    sql`CASE WHEN status = ${'active'} THEN ${1} ELSE ${0} END as active`,
+  ])}
   FROM users
 `;
 ```
@@ -326,45 +359,47 @@ argument:
 const [rows] = await sql`
   SELECT * FROM users 
   WHERE ${sql.join(
-        [
-          // Better to use `sql.and()` for this, but just for example:
-          sql`id = ${userId}`,
-          sql`status = 'active'`,
-        ],
-        ' AND ',
-)}
+    [
+      // Better to use `sql.and()` for this, but just for example:
+      sql`id = ${userId}`,
+      sql`status = 'active'`,
+    ],
+    ' AND ',
+  )}
 `;
 ```
 
-## Creating database drivers
+## Creating SQLTags for other databases
 
-SQL Builder is just a thin wrapper around a database client. Any database client library
-that supports parameterized queries can be used with SQLTags.
+A SQL tag is just a thin wrapper around a database client. Any database client library that supports
+parameterized queries can be used with SQLTags.
 
-To create a driver, you need to implement a subclass of the abstract `SqlTagBase` class. This class
-defines the abstract methods that SQL Builder uses to interact with the database driver. The class
-is defined and documented
+To create a tag for a new database client, you need to implement a subclass of the abstract
+`SqlTagBase` class. This abstract class defines the methods that SQLTags needs to interact with the
+database driver. It is defined and documented
 [here](https://github.com/brombal/sqltags/blob/main/core/SqlTagAbstractBase.ts), and you can see
 example implementations for
 [MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/mysql.ts),
 [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/postgres/postgres.ts), and
 [SQLite](https://github.com/brombal/sqltags/blob/main/drivers/sqlite/sqlite.ts).
 
-A `SqlTag` subclass will generally accept some kind of database connection object as a constructor
-parameter, and will use that connection object to execute queries or create cursors. The subclass
-will also define the type for the additional query response information (such as rows
-updated/inserted, column definitions, etc).
+Your subclass will probably accept a database connection object as a constructor parameter, and will
+use that connection object to execute queries or create cursors. The subclass should also define the
+TypeScript type for the additional query response information (such as rows updated/inserted, column
+definitions, etc).
 
-Here is an example pseudo implementation for a fake database driver library. All of the implemented
-methods are further described in the `SqlTagAbstractBase` class definition.
+Here is an example pseudo implementation for a fake database driver library. The purpose of each
+implemented method is further described in the `SqlTagAbstractBase`
+[class definition](https://github.com/brombal/sqltags/blob/main/core/SqlTagAbstractBase.ts).
 
 ```ts
 import { SqlTagBase } from '@sqltags/core';
-import { DatabaseConnection, QueryInfo } from 'some-database-library';
+import { DatabaseConnection, QueryInfo } from 'cool-database-library';
 
-export class SqlTag extends SqlTagBase<QueryInfo> {
-  //                                  ^^ The generic type parameter specifies the type
-  //                                     of the additional query response information:
+export class CoolSqlTag extends SqlTagBase<QueryInfo> {
+  //                                       ^^
+  //                                       The type parameter specifies the type of the
+  //                                       additional query response information.
 
   constructor(private db: DatabaseConnection) {
     super();
@@ -384,14 +419,14 @@ export class SqlTag extends SqlTagBase<QueryInfo> {
 
   async query(sql: string, params: any[]): Promise<[any[], TQueryInfo]> {
     const res = await this.db.query(sql, params);
-    // res.rows contains the array of row objects
-    // res.info is a "QueryInfo" object, as defined by the database driver
+    // For this example, res.rows contains the array of row objects, and
+    // res.info is a "QueryInfo" object.
     return [res.rows, res.info];
   }
 
   async *cursor(sql: string, params: any[]): AsyncIterable<any> {
     const cursor = this.db.cursor(sql, params);
-    // In a perfect scenario, the database driver would offer cursor support like this;
+    // In a perfect scenario, the database driver would offer easy cursor support like this,
     // but it's often tricker to implement. Check out the PostgreSQL/MySQL/SQLite drivers for examples.
     for await (const row of cursor) {
       yield row;
@@ -400,14 +435,15 @@ export class SqlTag extends SqlTagBase<QueryInfo> {
 }
 ```
 
-Then create an instance of your tag, and start querying:
+Then create an instance of your tag class, and start querying:
 
 ```ts
 const db = new DatabaseConnection({
   /* ... */
 });
-const sql = new SqlTag(db);
+const sql = new CoolSqlTag(db);
 
 // Query!
-await sql`SELECT * FROM users WHERE id = ${userId}`;
+const [rows, info] = await sql`SELECT * FROM users WHERE id = ${userId}`;
+//           ^^ info is a QueryInfo object
 ```
