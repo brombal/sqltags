@@ -1,6 +1,6 @@
 # <img src="./sqltags-logo.svg" width="400" alt="sqltags project logo" title="sqltags" />
 
-![Build status](https://github.com/brombal/sqltags/actions/workflows/build-and-test.yml/badge.svg?branch=v1)
+![Build status](https://github.com/brombal/sqltags/actions/workflows/build-test.yml/badge.svg?branch=main)
 [![npm version](https://badge.fury.io/js/@sqltags%2Fcore.svg)](https://badge.fury.io/js/@sqltags/core)
 
 🔧✨ Safely create & execute parameterized SQL queries using template strings.
