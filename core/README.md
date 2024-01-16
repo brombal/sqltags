@@ -52,7 +52,7 @@ SELECT * FROM users WHERE id = ?
     - [INSERT expressions](#INSERT-expressions)
     - [IN expressions](#IN-expressions)
     - [Joining/concatenating values](#Joiningconcatenating-values)
-- [Creating SQLTags for other databases](#Creating-SQLTags-for-other-databases)
+- [Creating SqlTags for other databases](#Creating-SqlTags-for-other-databases)
 
 ---
 
@@ -63,12 +63,12 @@ Choose the driver for your database flavor:
 - `npm install @sqltags/pg`
 - `npm install @sqltags/mysql`
 - `npm install @sqltags/sqlite`
-- Or [create your own](#Creating-SQLTags-for-other-databases) with `npm install @sqltags/core`
+- Or [create your own](#Creating-SqlTags-for-other-databases) with `npm install @sqltags/core`
 
 Then, create a **template tag** using the `SqlTag` constructor from your chosen driver library.
 
 Here's an example using MySQL (there are other drivers for PostgreSQL and SQLite, or you can
-[create your own](#Creating-SQLTags-for-other-databases)):
+[create your own](#Creating-SqlTags-for-other-databases)):
 
 ```ts
 import { SqlTag } from '@sqltags/mysql';
@@ -369,13 +369,13 @@ const [rows] = await sql`
 `;
 ```
 
-## Creating SQLTags for other databases
+## Creating SqlTags for other databases
 
 A SQL tag is just a thin wrapper around a database client. Any database client library that supports
-parameterized queries can be used with SQLTags.
+parameterized queries can be used with SqlTags.
 
 To create a tag for a new database client, you need to implement a subclass of the abstract
-`SqlTagBase` class. This abstract class defines the methods that SQLTags needs to interact with the
+`SqlTag` class. This abstract class defines the methods that SqlTags needs to interact with the
 database driver. It is defined and documented
 [here](https://github.com/brombal/sqltags/blob/main/core/SqlTagAbstractBase.ts), and you can see
 example implementations for
@@ -393,10 +393,10 @@ implemented method is further described in the `SqlTagAbstractBase`
 [class definition](https://github.com/brombal/sqltags/blob/main/core/SqlTagAbstractBase.ts).
 
 ```ts
-import { SqlTagBase } from '@sqltags/core';
+import { SqlTag } from '@sqltags/core';
 import { DatabaseConnection, QueryInfo } from 'cool-database-library';
 
-export class CoolSqlTag extends SqlTagBase<QueryInfo> {
+export class CoolSqlTag extends SqlTag<QueryInfo> {
   //                                       ^^
   //                                       The type parameter specifies the type of the
   //                                       additional query response information.

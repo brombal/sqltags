@@ -1,7 +1,7 @@
 {
   "name": "@sqltags/sqlite",
-  "version": "0.0.1",
-  "description": "SQLite driver for sqltags (@sqltags/core) \uD83D\uDD27✨ Safely create & execute parameterized SQL queries using template strings",
+  "version": "0.0.3",
+  "description": "SQLite driver for sqltags (@sqltags/core) 🔧✨ Safely create & execute parameterized SQL queries using template strings",
   "license": "MIT",
   "author": {
     "name": "Alex Brombal",

@@ -1,12 +1,15 @@
 # <img src="./sqltags-logo.svg" width="400" alt="sqltags project logo" title="sqltags" />
 
+![Build status](https://github.com/brombal/sqltags/actions/workflows/build-and-test.yml/badge.svg?branch=workflow-test)
+[![npm version](https://badge.fury.io/js/@sqltags%2Fcore.svg)](https://badge.fury.io/js/@sqltags%2Fcore)
+
 🔧✨ Safely create & execute parameterized SQL queries using template strings.
 
 ```ts
 const [user] = await sql`SELECT * FROM users WHERE id = ${userId}`;
 ```
 
-Results in the following query:
+This runs the following query:
 
 ```sql
 SELECT * FROM users WHERE id = ?
@@ -52,7 +55,7 @@ SELECT * FROM users WHERE id = ?
     - [INSERT expressions](#INSERT-expressions)
     - [IN expressions](#IN-expressions)
     - [Joining/concatenating values](#Joiningconcatenating-values)
-- [Creating SQLTags for other databases](#Creating-SQLTags-for-other-databases)
+- [Creating SqlTags for other databases](#Creating-SqlTags-for-other-databases)
 
 ---
 
@@ -63,15 +66,15 @@ Choose the driver for your database flavor:
 - `npm install @sqltags/pg`
 - `npm install @sqltags/mysql`
 - `npm install @sqltags/sqlite`
-- Or [create your own](#Creating-SQLTags-for-other-databases) with `npm install @sqltags/core`
+- Or [create your own](#Creating-SqlTags-for-other-databases) with `npm install @sqltags/core`
 
-Then, create a **template tag** using the `SqlTag` constructor from your chosen driver library.
+Then, create a **template tag** using the factory function from your chosen driver library.
 
 Here's an example using MySQL (there are other drivers for PostgreSQL and SQLite, or you can
-[create your own](#Creating-SQLTags-for-other-databases)):
+[create your own](#Creating-SqlTags-for-other-databases)):
 
 ```ts
-import { SqlTag } from '@sqltags/mysql';
+import { createMySqlTag } from '@sqltags/mysql';
 import mysql from 'mysql2';
 
 // Create your connection object, e.g.:
@@ -79,8 +82,8 @@ const client = mysql.createConnection({
   /* ... */
 });
 
-// Create the sql tag, using the mysql driver and your connection:
-const sql = new SqlTag(client);
+// Then create the sql tag using your connection:
+const sql = createMySqlTag(client);
 ```
 
 For documentation on the driver-specific setup, check out their readme pages:
@@ -94,12 +97,12 @@ For documentation on the driver-specific setup, check out their readme pages:
 To execute a query, simply use the tag with a SQL query, and `await` the result:
 
 ```ts
-const [rows, details] = await sql<User>`SELECT * FROM users`;
+const [rows, info] = await sql<User>`SELECT * FROM users`;
 ```
 
-The result is a 2-tuple of `[rows, details]`, where `rows` is an array of the query results, and
-`details` is any additional information about the query that the driver provides (e.g. the column
-information, or number of affected rows, etc).
+The result is a 2-tuple of `[rows, info]`, where `rows` is an array of the query results, and `info`
+is any additional information about the query that the driver provides (e.g. the column information,
+or number of affected rows, etc).
 
 ## Cursors
 
@@ -131,34 +134,51 @@ interface User {
   // etc.
 }
 
-const [users, details] = await sql<User>`SELECT * FROM users`;
-// users is of type User[]
+const [users, info] = await sql<User>`SELECT * FROM users`;
 ```
 
-The type of `details` is defined by the driver.
+`users` will be of type User[]. The type of `info` is defined by the driver.
 
 ## Building SQL queries
 
 ### Parameterized values
 
-The SQL tag will automatically parameterize values that are interpolated into the query.
+Values will automatically be parameterized when they are interpolated into the query template
+string.
 
 ```js
 const [rows] = await sql`SELECT * FROM users WHERE id = ${userId}`;
 ```
 
-Values are escaped by parameterizing them according to the database driver.
+"Parameterized" means that they are replaced by a placeholder (e.g. `?` or `$1`) and passed to the
+database driver separately from the query string. This is the safest way to execute queries, and
+prevents SQL injection attacks.
+
+> **Warning!** Be careful when interpolating "falsy" values. `undefined` values will be omitted from
+> the query completely:
+>
+> ```ts
+> const userId = undefined;
+> const [rows] = await sql`SELECT * FROM users WHERE id = ${userId}`;
+> // Executes an invalid statement:
+> // SELECT * FROM users WHERE id =
+> // with no query parameters!
+> ```
+>
+> However, other falsy values (e.g. `null`, `false`, `0`) will be included and sent as query
+> parameters.
 
 ### Identifiers
 
-To interpolate an identifier (e.g. a table or column name), use the tag's `.id()` method:
+To safely embed an identifier (e.g. a table or column name) into a query string, use the tag's
+`.id()` method:
 
 ```js
 const table = 'users';
 const [tableValues] = await sql`SELECT * FROM ${sql.id(table)}`;
 ```
 
-Identifiers are escaped by the driver, but are not parameterized.
+Identifiers are escaped appropriately by the driver, but are not parameterized.
 
 ### Nested SQL expressions
 
@@ -172,7 +192,10 @@ const [rows] = await sql`
 `;
 ```
 
-To embed variables that should not be escaped, use the tag's `.raw()` method:
+**If you try to embed strings without the `sql` tag, they will be escaped as strings and not
+parameterized.**
+
+To embed strings directly without parameterizing them, use the tag's `.raw()` method:
 
 ```js
 const whereClause = "status = 'active'";
@@ -183,14 +206,10 @@ const [rows] = await sql`
 `;
 ```
 
-> **Warning!** Be careful when interpolating "falsy" values. `undefined` values will be omitted from
-> the query. Other falsy values (e.g. `null`, `false`, `0`) will be included, and parameterized
-> based on the implementation of the database driver.
-
 ### Concatenating SQL expressions
 
-**Note** that the return value of a SQL tag is **not a string**, so you **cannot** concatenate them
-using the `+` operator.
+Because the return value of a SQL tag is **not a string**, you **cannot** concatenate them using the
+`+` operator.
 
 ```js
 const query = sql`SELECT * FROM users`;
@@ -211,8 +230,8 @@ const query = sql`
 `;
 ```
 
-Or, push query parts onto an array and join them using the tag's `.join()` method (described more
-below):
+Another approach is to push query parts onto an array, and join them using the tag's `.join()`
+method:
 
 ```js
 const queryParts = [sql`SELECT * FROM users`];
@@ -230,6 +249,9 @@ const [rows] = await query;
 ## SQL expression helpers
 
 The SQL tag object also provides a handful of helper methods to construct common SQL expressions.
+
+All expression helper methods generally accept both raw values and other nested tagged SQL
+expressions.
 
 ### AND and OR expressions
 
@@ -257,15 +279,15 @@ const [rows] = await sql`
 // Results in:
 //   SELECT *
 //   FROM users
-//   WHERE (id = 123 AND (status = 'active' OR status = 'pending'))
+//   WHERE (id = ? AND (status = ? OR status = ?))
 ```
 
 ### UPDATE expressions
 
 - `sql.setValues(value: Record<string, any>, pickFrom?: string[])`
 
-Generates a list of `key = value` pairs for use in an `UPDATE SET` statement. You can optionally
-include a list of properties to pick from the object.
+Generates a list of `` `column` = 'value' `` pairs for use in an `UPDATE SET` statement. You can
+optionally include a list of properties to pick from the object.
 
 ```js
 const user = {
@@ -284,8 +306,8 @@ const [rows] = await sql`
 
 // Results in:
 //   UPDATE users
-//   SET name = 'Alex', status = 'active'
-//   WHERE id = 1
+//   SET name = ?, status = ?
+//   WHERE id = ?
 ```
 
 ### INSERT expressions
@@ -305,7 +327,7 @@ const newUsers = [
 await sql`INSERT INTO users ${sql.insertValues(newUsers)}`;
 
 // Results in:
-//   INSERT INTO users (`name`, `email`) VALUES ('Alex', 'alex@example.com'), ('Bob', 'bob@example.com')
+//   INSERT INTO users (`name`, `email`) VALUES (?, ?), (?, ?)
 ```
 
 Just like `.setValues()`, You can optionally include a list of properties to pick from each object.
@@ -321,7 +343,7 @@ method:
 const [rows] = await sql`SELECT * FROM users WHERE ${sql.in('id', [1, 2, 3])}`;
 
 // Results in:
-//   SELECT * FROM users WHERE `id` IN (1, 2, 3)
+//   SELECT * FROM users WHERE `id` IN (?, ?, ?)
 ```
 
 ### Joining/concatenating values
@@ -336,20 +358,6 @@ const [rows] = await sql`SELECT * FROM users WHERE id IN (${sql.join(ids)})`;
 
 // Results in:
 //   SELECT * FROM users WHERE id IN (1, 2, 3)
-```
-
-You can also pass other tagged expressions to `.join()`, which will be escaped (or not) as
-appropriate:
-
-```js
-const [rows] = await sql`
-  SELECT ${sql.join([
-    sql.id('id'),
-    sql.id('email'),
-    sql`CASE WHEN status = ${'active'} THEN ${1} ELSE ${0} END as active`,
-  ])}
-  FROM users
-`;
 ```
 
 Values will be joined with a comma by default, but you can pass a specific separator as the second
@@ -369,81 +377,115 @@ const [rows] = await sql`
 `;
 ```
 
-## Creating SQLTags for other databases
+## Creating SqlTags for other databases
 
-A SQL tag is just a thin wrapper around a database client. Any database client library that supports
-parameterized queries can be used with SQLTags.
+A `SqlTag` instance is just a thin wrapper around a database client driver. Any database client
+library that supports parameterized queries (and optionally cursors) can be used with SqlTags.
 
-To create a tag for a new database client, you need to implement a subclass of the abstract
-`SqlTagBase` class. This abstract class defines the methods that SQLTags needs to interact with the
-database driver. It is defined and documented
-[here](https://github.com/brombal/sqltags/blob/main/core/SqlTagAbstractBase.ts), and you can see
-example implementations for
-[MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/mysql.ts),
+To create a `SqlTag` instance for any database client, you need to implement the `SqlTagDriver`
+interface. This interface defines the methods that a SqlTag instance needs to parameterize values,
+run queries, etc. It is defined and documented
+[here](https://github.com/brombal/sqltags/blob/main/core/SqlTagDriver.ts), and you can see example
+implementations for [MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/mysql.ts),
 [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/postgres/postgres.ts), and
 [SQLite](https://github.com/brombal/sqltags/blob/main/drivers/sqlite/sqlite.ts).
 
-Your subclass will probably accept a database connection object as a constructor parameter, and will
-use that connection object to execute queries or create cursors. The subclass should also define the
-TypeScript type for the additional query response information (such as rows updated/inserted, column
-definitions, etc).
+As the existing driver implementations demonstrate, the convention is to create a function that
+accepts a database connection object, and returns a new instance of the `SqlTag` class with the
+custom driver. The `SqlTag` instance must also define the TypeScript types for the additional query
+response information (such as rows updated/inserted, column definitions, etc), and the cursor
+options parameter.
 
-Here is an example pseudo implementation for a fake database driver library. The purpose of each
-implemented method is further described in the `SqlTagAbstractBase`
-[class definition](https://github.com/brombal/sqltags/blob/main/core/SqlTagAbstractBase.ts).
+Here is an example implementation for a fake database driver called "CoolDb". The purpose of each
+implemented method is further described in the `SqlTagDriver`
+[interface definition](https://github.com/brombal/sqltags/blob/main/core/SqlTagDriver.ts).
 
 ```ts
-import { SqlTagBase } from '@sqltags/core';
-import { DatabaseConnection, QueryInfo } from 'cool-database-library';
+import { SqlTag } from '@sqltags/core';
+import {
+  type CoolDbConnection,
+  type CoolQueryInfo,
+  type CoolCursorOptions,
+} from 'cool-database-library';
 
-export class CoolSqlTag extends SqlTagBase<QueryInfo> {
-  //                                       ^^
-  //                                       The type parameter specifies the type of the
-  //                                       additional query response information.
+export function createCoolDbTag(conn: CoolDbConnection) {
+  return new SqlTag<
+    // Type parameter specifies the additional query response information:
+    CoolQueryInfo,
+    // Type parameter specifies the options parameter passed to .cursor():
+    CoolCursorOptions
+  >({
+    parameterizeValue(value: any, paramIndex: number): string {
+      return `$${paramIndex}`; // $1, $2, $3, etc.
+    },
 
-  constructor(private db: DatabaseConnection) {
-    super();
-  }
+    serializeValue(value: unknown): any {
+      // This is an optional method; the default behavior is to return `value` unchanged.
+      return value;
+    },
 
-  parameterizeValue(value: any, paramIndex: number): string {
-    return `$${paramIndex}`; // $1, $2, $3, etc.
-  }
+    escapeIdentifier(identifier: string): string {
+      return `"${identifier.replaceAll('"', '""')}"`; // e.g. "my_terrible""_table_name"
+    },
 
-  serializeValue(value: unknown): any {
-    return super.serializeValue(value);
-  }
+    async query(sql: string, params: any[]): Promise<[any[], CoolQueryInfo]> {
+      // Use the `conn` object passed to the function to execute the query:
+      const res = await conn.query(sql, params);
+      // For this example, res.rows contains the array of row objects, and
+      // res.info is a "CoolQueryInfo" object.
+      return [res.rows, res.info];
+    },
 
-  escapeIdentifier(identifier: string): string {
-    return `"${identifier.replaceAll('"', '""')}"`; // e.g. "my_terrible""_table_name"
-  }
-
-  async query(sql: string, params: any[]): Promise<[any[], TQueryInfo]> {
-    const res = await this.db.query(sql, params);
-    // For this example, res.rows contains the array of row objects, and
-    // res.info is a "QueryInfo" object.
-    return [res.rows, res.info];
-  }
-
-  async *cursor(sql: string, params: any[]): AsyncIterable<any> {
-    const cursor = this.db.cursor(sql, params);
-    // In a perfect scenario, the database driver would offer easy cursor support like this,
-    // but it's often tricker to implement. Check out the PostgreSQL/MySQL/SQLite drivers for examples.
-    for await (const row of cursor) {
-      yield row;
-    }
-  }
+    async *cursor(sql: string, params: any[], options: CoolCursorOptions): AsyncIterable<any> {
+      // Use the `conn` object passed to the function to execute the query:
+      const cursor = conn.cursor(sql, params, options);
+      // In the easiest scenario, the database driver might offer simple iterable cursor support like this,
+      // but it's often tricker to implement. Check out the PostgreSQL/MySQL/SQLite drivers for examples.
+      for await (const row of cursor) {
+        yield row;
+      }
+    },
+  });
 }
 ```
 
-Then create an instance of your tag class, and start querying:
+Then use the method to create an instance of your `SqlTag` class, and start querying:
 
 ```ts
-const db = new DatabaseConnection({
+// Connect to your database using your client library, e.g.:
+const db = new CoolDbConnection({
   /* ... */
 });
-const sql = new CoolSqlTag(db);
+
+// Use the function you created to create a SqlTag instance:
+const sql = createCoolDbTag(db);
 
 // Query!
 const [rows, info] = await sql`SELECT * FROM users WHERE id = ${userId}`;
-//           ^^ info is a QueryInfo object
 ```
+
+## Contributing
+
+Contributions are welcome! Please open an issue or pull request on the
+[GitHub repository](https://github.com/brombal/sqltags).
+
+## License
+
+MIT License
+
+Copyright (c) 2024 Alex Brombal
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial
+portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
+OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

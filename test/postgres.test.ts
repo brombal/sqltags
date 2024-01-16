@@ -1,4 +1,4 @@
-import { SqlTag } from '../drivers/postgres/postgres';
+import { createPgTag } from '../drivers/postgres/postgres';
 import { Client, Pool } from 'pg';
 import { executeDriverTests } from './driver-tests';
 
@@ -11,11 +11,11 @@ describe('pg client', () => {
     port: 5432,
   });
 
-  let sql: SqlTag;
+  let sql: ReturnType<typeof createPgTag>;
 
   beforeAll(async () => {
     await client.connect();
-    sql = new SqlTag(client);
+    sql = createPgTag(client);
   });
 
   afterAll(async () => {
@@ -55,10 +55,10 @@ describe('pg pool', () => {
     port: 5432,
   });
 
-  let sql: SqlTag;
+  let sql: ReturnType<typeof createPgTag>;
 
   beforeAll(async () => {
-    sql = new SqlTag(client);
+    sql = createPgTag(client);
   });
 
   afterAll(async () => {

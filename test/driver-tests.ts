@@ -1,4 +1,4 @@
-import { SqlTagBase } from '../core';
+import { SqlTag } from '../core';
 
 type User = {
   id: number;
@@ -6,10 +6,10 @@ type User = {
   email: string;
 };
 
-export function executeDriverTests(testPrefix: string, getSql: () => SqlTagBase<any>) {
+export function executeDriverTests(testPrefix: string, getSql: () => SqlTag<any, any>) {
   let testUsers: User[];
 
-  let sql: SqlTagBase<any>;
+  let sql: SqlTag<any, any>;
 
   beforeAll(() => {
     sql = getSql();

@@ -2,7 +2,7 @@
 
 <br>
 
-## SQLTags MySQL driver 
+## SqlTags MySQL driver 
 
 This is the **MySQL driver** for the `@sqltags/core` library.
 
@@ -10,7 +10,7 @@ Please refer to the [@sqltags/core project README](https://github.com/brombal/sq
 
 <br>
 
-## What is SQLTags?
+## What is SqlTags?
 
 🔧✨ Safely create & execute parameterized SQL queries using template strings.
 
@@ -35,14 +35,14 @@ Install:
 npm install mysql2 @sqltags/mysql
 ```
 
-Create a MySQL connection and a `SqlTag` instance with the connection:
+Create a MySQL connection, then create a MySQL tag using the connection:
 
 ```ts
 import mysql from 'mysql2';
-import { SqlTag } from '@sqltags/mysql';
+import { createMySqlTag } from '@sqltags/mysql';
 
 const connection = mysql.createConnection({ /* ... */ });
-const sql = new SqlTag(connection);
+const sql = createMySqlTag(connection);
 ```
 
 Query:

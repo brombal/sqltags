@@ -16,7 +16,7 @@
   "scripts": {
     "clean": "rm -rf ./.parcel-cache ./core/dist ./drivers/*/dist",
     "build": "npm run clean && (cd ./core && npm run build) && (cd ./drivers/mysql && npm run build) && (cd ./drivers/postgres && npm run build) && (cd ./drivers/sqlite && npm run build)",
-    "test": "npm run clean && node --expose-gc ./node_modules/.bin/jest --coverage --detectOpenHandles"
+    "test": "node --expose-gc ./node_modules/.bin/jest --coverage --detectOpenHandles"
   },
   "workspaces": [
     "./core",
