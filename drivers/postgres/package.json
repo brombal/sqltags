@@ -1,6 +1,6 @@
 {
   "name": "@sqltags/pg",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "PostgreSQL driver for SqlTags (@sqltags/core) 🔧✨ Safely create & execute parameterized SQL queries using template strings",
   "license": "MIT",
   "author": {
@@ -8,6 +8,19 @@
     "email": "alex@brombal.com",
     "url": "https://brombal.com"
   },
+  "keywords": [
+    "sql",
+    "query",
+    "parameterized",
+    "injection",
+    "template",
+    "tag",
+    "tagged",
+    "string",
+    "postgres",
+    "mysql",
+    "sqlite"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/brombal/sqltags.git"
