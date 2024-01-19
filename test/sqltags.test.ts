@@ -1,4 +1,5 @@
-import { SqlTagBase, defaultSerializeValue } from '../core';
+import { SqlTag } from '../core';
+import { SqlTagDriver } from '../core/SqlTagDriver';
 
 type MockQueryInfo = [string, ...any[]];
 
@@ -13,48 +14,45 @@ const testUsers: User[] = [
   { id: 2, name: 'Bob', email: 'bob@example.com' },
 ];
 
-const mockSql = (serializeValue?: (value: unknown) => any) =>{
-  class MockSqlTag extends SqlTagBase<MockQueryInfo> {
+interface MockCursorOptions {
+  cursorOption: number;
+}
+
+function createMockSqlTag(serializeValue?: (value: unknown) => any) {
+  const driver: SqlTagDriver<MockQueryInfo, MockCursorOptions> = {
     parameterizeValue(_value: any, paramIndex: number) {
       return `$${paramIndex + 1}`;
-    }
-    serializeValue(value: any) {
-      return serializeValue ? serializeValue(value) : defaultSerializeValue(value);
-    }
+    },
+    serializeValue,
     escapeIdentifier(identifier: string) {
       return `\`${identifier.replace(/`/g, '``')}\``;
-    }
-    async query (sql: string, params: any[]): Promise<[any[], MockQueryInfo]> {
+    },
+    query: jest.fn(async function (sql: string, params: any[]): Promise<[any[], MockQueryInfo]> {
       if (sql === 'SELECT bad syntax') throw new Error('bad syntax');
       // mock returns dummy data and sql and params for testing
       return [testUsers, [sql.trim(), ...params]];
-    }
-    async* cursor(_sql: string, _params: any[]): AsyncIterable<any> {
+    }),
+    cursor: jest.fn(async function* (_sql: string, _params: any[]): AsyncIterable<any> {
       for (const user of testUsers) {
         yield user;
       }
-    }
-  }
-
-  // mock query and cursor method
-  MockSqlTag.prototype.query = jest.fn(MockSqlTag.prototype.query);
-  MockSqlTag.prototype.cursor = jest.fn(MockSqlTag.prototype.cursor);
-
-  return new MockSqlTag();
+    }),
+  };
+  return [new SqlTag<MockQueryInfo, MockCursorOptions>(driver), driver] as const;
 }
 
 describe('sqltags', () => {
   test('interpolate value', async () => {
-    const sql = mockSql();
+    const [sql, driver] = createMockSqlTag();
     const res = sql<User>`SELECT * FROM users WHERE id = ${1} AND name = ${'bob'}`;
     const [users, info] = await res;
     expect(users).toEqual(testUsers);
     expect(info).toEqual(['SELECT * FROM users WHERE id = $1 AND name = $2', 1, 'bob']);
-    expect(sql.query).toHaveBeenCalledTimes(1);
+    expect(driver.query).toHaveBeenCalledTimes(1);
   });
 
   test('interpolate identifier', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const table = 'users';
     const [users, info] = await sql<User>`SELECT * FROM ${sql.id(table)}`;
     expect(users).toEqual(testUsers);
@@ -62,37 +60,37 @@ describe('sqltags', () => {
   });
 
   test('interpolate nested expression', async () => {
-    const sql = mockSql();
+    const [sql, driver] = createMockSqlTag();
     const [users, info] =
       await sql<User>`SELECT * FROM users ${sql`WHERE id = ${1}`} ${sql`AND name = ${'bob'}`}`;
     expect(users).toEqual(testUsers);
     expect(info).toEqual(['SELECT * FROM users WHERE id = $1 AND name = $2', 1, 'bob']);
-    expect(sql.query).toHaveBeenCalledTimes(1);
+    expect(driver.query).toHaveBeenCalledTimes(1);
   });
 
   test('interpolate undefined', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [_users, info] = await sql<User>`SELECT * FROM users ${undefined}`;
     expect(info).toEqual(['SELECT * FROM users']);
   });
 
   test('custom serialization', async () => {
-    const sql = mockSql(function serializeValue(value: unknown): any {
+    const [sql] = createMockSqlTag(function serializeValue(value: unknown): any {
       if (value === 'special-value') return 'serialized:special-value';
-      return defaultSerializeValue(value);
+      return value;
     });
     const [, info] = await sql<User>`SELECT * FROM users WHERE value = ${'special-value'}`;
     expect(info).toEqual(['SELECT * FROM users WHERE value = $1', 'serialized:special-value']);
   });
 
   test('join', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql<number>`SELECT * FROM users WHERE id IN (${sql.join([1, 2, 3])})`;
     expect(info).toEqual(['SELECT * FROM users WHERE id IN ($1, $2, $3)', 1, 2, 3]);
   });
 
   test('join identifiers and expressions with custom joiner', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql<User>`
       SELECT ${sql.join([sql.id('name'), sql.id('email')])} 
       FROM users 
@@ -107,7 +105,7 @@ describe('sqltags', () => {
   });
 
   test('join escaped values omits undefined', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql<User>`SELECT * FROM users WHERE id IN (${sql.join([
       1,
       undefined,
@@ -117,8 +115,11 @@ describe('sqltags', () => {
   });
 
   test('cursor', async () => {
-    const sql = mockSql();
-    const res = sql<User>`SELECT * FROM users`.cursor();
+    const [sql, driver] = createMockSqlTag();
+    const res = sql<User>`SELECT * FROM users`.cursor({ cursorOption: 1 });
+
+    // @ts-expect-error
+    sql<User>`SELECT * FROM users`.cursor({ badProperty: 1 });
 
     let count = 0;
     for await (const user of res) {
@@ -126,10 +127,12 @@ describe('sqltags', () => {
       count++;
     }
     expect(count).toEqual(2);
+
+    expect(driver.cursor).toHaveBeenCalledWith('SELECT * FROM users', [], { cursorOption: 1 });
   });
 
   test('and/or', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql<User>`
       SELECT * FROM users
       WHERE ${sql.and(
@@ -154,7 +157,7 @@ describe('sqltags', () => {
   });
 
   test('update with auto values', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql`
       UPDATE users
       SET ${sql.setValues(testUsers[0])}
@@ -173,7 +176,7 @@ describe('sqltags', () => {
   });
 
   test('update with picked values', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql`
       UPDATE users
       SET ${sql.setValues(testUsers[0], 'name', 'email')}
@@ -191,7 +194,7 @@ describe('sqltags', () => {
   });
 
   test('insert single row with auto values', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql`
       INSERT INTO users
       ${sql.insertValues(testUsers[0])}
@@ -207,7 +210,7 @@ describe('sqltags', () => {
   });
 
   test('insert single row with picked values', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql`
       INSERT INTO users
       ${sql.insertValues(testUsers[0], 'name', 'email')}
@@ -222,7 +225,7 @@ describe('sqltags', () => {
   });
 
   test('insert multiple rows with auto values', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql`
       INSERT INTO users
       ${sql.insertValues(testUsers)}
@@ -241,7 +244,7 @@ describe('sqltags', () => {
   });
 
   test('value in array', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql`
       SELECT * FROM users
       WHERE ${sql.in('id', [1, 2, 3])}
@@ -257,7 +260,7 @@ describe('sqltags', () => {
   });
 
   test('value in empty array', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql`
       SELECT * FROM users
       WHERE ${sql.in('id', [])}
@@ -271,7 +274,7 @@ describe('sqltags', () => {
   });
 
   test('value in array with custom ifEmpty', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const [, info] = await sql`
       SELECT * FROM users
       WHERE ${sql.in('id', [], 1)}
@@ -285,7 +288,7 @@ describe('sqltags', () => {
   });
 
   test('calling .compile() returns sql and params', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
     const debug = sql`
       SELECT * FROM users
       WHERE ${sql.in('id', [], 1)}
@@ -301,7 +304,7 @@ describe('sqltags', () => {
   });
 
   test('sql error', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
 
     await expect(async () => {
       await sql`SELECT bad syntax`;
@@ -309,43 +312,23 @@ describe('sqltags', () => {
   });
 
   test('sql expression does not execute if not awaited', async () => {
-    const sql = mockSql();
+    const [sql, driver] = createMockSqlTag();
 
     sql`SELECT * FROM users`;
     await new Promise((resolve) => setTimeout(() => resolve(null), 100));
 
-    expect(sql.query).toHaveBeenCalledTimes(0);
+    expect(driver.query).toHaveBeenCalledTimes(0);
 
     await sql`SELECT * FROM users`;
 
-    expect(sql.query).toHaveBeenCalledTimes(1);
+    expect(driver.query).toHaveBeenCalledTimes(1);
   });
 
   test('compile', async () => {
-    const sql = mockSql();
+    const [sql] = createMockSqlTag();
 
     const [query, params] = sql.compile`SELECT * FROM users WHERE id = ${1}`;
     expect(query).toEqual('SELECT * FROM users WHERE id = $1');
     expect(params).toEqual([1]);
-  });
-});
-
-describe('defaultSerializeValue', () => {
-  test('serializes dates', () => {
-    const date = new Date('2020-01-01');
-    expect(defaultSerializeValue(date)).toEqual(date.toISOString());
-  });
-
-  test('serializes arrays', () => {
-    expect(defaultSerializeValue([1, 2, 3])).toEqual('[1,2,3]');
-  });
-
-  test('serializes objects', () => {
-    expect(defaultSerializeValue({ a: 1, b: 2 })).toEqual('{"a":1,"b":2}');
-  });
-
-  test('does not serialize other values', () => {
-    expect(defaultSerializeValue(123)).toEqual(123);
-    expect(defaultSerializeValue('123')).toEqual('123');
   });
 });

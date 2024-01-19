@@ -1,8 +1,11 @@
 # <img src="https://raw.githubusercontent.com/brombal/sqltags/v1/sqltags-logo.svg" width="400" alt="sqltags project logo" title="sqltags" />
 
+![Build status](https://github.com/brombal/sqltags/actions/workflows/build-test.yml/badge.svg?branch=main)
+[![npm version](https://badge.fury.io/js/@sqltags%2Fcore.svg)](https://badge.fury.io/js/@sqltags/sqlite)
+
 <br>
 
-## SQLTags SQLite driver 
+## SqlTags SQLite driver 
 
 This is the **SQLite driver** for the `@sqltags/core` library.
 
@@ -10,7 +13,7 @@ Please refer to the [@sqltags/core project README](https://github.com/brombal/sq
 
 <br>
 
-## What is SQLTags?
+## What is SqlTags?
 
 🔧✨ Safely create & execute parameterized SQL queries using template strings.
 
@@ -35,14 +38,14 @@ Install:
 npm install sqlite3 @sqltags/sqlite
 ```
 
-Create a SQLite database connection and a `SqlTag` instance with the connection:
+Create a SQLite database connection, then create a SQL tag using the connection:
 
 ```ts
 import s from 'sqlite3';
-import { SqlTag } from '@sqltags/sqlite';
+import { createSqliteTag } from '@sqltags/sqlite';
 
 const db = new s.Database(':memory:');
-const sql = new SqlTag(db);
+const sql = createSqliteTag(db);
 ```
 
 Query:

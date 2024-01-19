@@ -1,4 +1,4 @@
-import { Callable } from '@sqltags/core/util';
+import { Callable } from '../core/util';
 
 describe('callable', () => {
   class MyCallable {

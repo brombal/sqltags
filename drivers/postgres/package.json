@@ -1,7 +1,7 @@
 {
   "name": "@sqltags/pg",
-  "version": "0.0.11",
-  "description": "PostgreSQL driver for SQLTags (@sqltags/core) \uD83D\uDD27✨ Safely create & execute parameterized SQL queries using template strings",
+  "version": "0.0.15",
+  "description": "PostgreSQL driver for SqlTags (@sqltags/core) 🔧✨ Safely create & execute parameterized SQL queries using template strings",
   "license": "MIT",
   "author": {
     "name": "Alex Brombal",

@@ -1,7 +1,7 @@
 {
   "name": "@sqltags/mysql",
-  "version": "0.0.1",
-  "description": "MySQL driver for sqltags (@sqltags/core) \uD83D\uDD27✨ Safely create & execute parameterized SQL queries using template strings",
+  "version": "0.0.5",
+  "description": "MySQL driver for sqltags (@sqltags/core) 🔧✨ Safely create & execute parameterized SQL queries using template strings",
   "license": "MIT",
   "author": {
     "name": "Alex Brombal",

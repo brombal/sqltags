@@ -1,14 +1,14 @@
-import { SqlTag } from '../drivers/sqlite/sqlite';
+import { createSqliteTag } from '../drivers/sqlite/sqlite';
 import { executeDriverTests } from './driver-tests';
 import s from 'sqlite3';
 
 describe('sqlite client', () => {
   const db = new s.Database(':memory:');
 
-  let sql: SqlTag;
+  let sql: ReturnType<typeof createSqliteTag>;
 
   beforeAll(async () => {
-    sql = new SqlTag(db);
+    sql = createSqliteTag(db);
   });
 
   afterAll(async () => {});

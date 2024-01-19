@@ -1,8 +1,11 @@
 # <img src="https://raw.githubusercontent.com/brombal/sqltags/v1/sqltags-logo.svg" width="400" alt="sqltags project logo" title="sqltags" />
 
+![Build status](https://github.com/brombal/sqltags/actions/workflows/build-test.yml/badge.svg?branch=main)
+[![npm version](https://badge.fury.io/js/@sqltags%2Fcore.svg)](https://badge.fury.io/js/@sqltags/postgres)
+
 <br>
 
-## SQLTags PostgreSQL driver
+## SqlTags PostgreSQL driver
 
 This is the **PostgreSQL driver** for the `@sqltags/core` library.
 
@@ -11,7 +14,7 @@ more information.
 
 <br>
 
-## What is SQLTags?
+## What is SqlTags?
 
 🔧✨ Safely create & execute parameterized SQL queries using template strings.
 
@@ -36,27 +39,27 @@ Install:
 npm install @sqltags/core @sqltags/pg
 ```
 
-Create & connect a PostgreSQL Client or Pool instance, and a `SqlTag` instance with the connection:
+Create & connect a PostgreSQL Client or Pool instance, then create a SQL tag using the connection:
 
 ```ts
 import { Client } from 'pg';
-import { SqlTag } from '@sqltags/pg';
+import { createPgTag } from '@sqltags/pg';
 
 const client = new Client({
   /* ... */
 });
 await client.connect();
-const sql = new SqlTag(client);
+const sql = createPgTag(client);
 ```
 
 ```ts
 import { Pool } from 'pg';
-import { SqlTag } from '@sqltags/pg';
+import { createPgTag } from '@sqltags/pg';
 
 const pool = new Pool({
   /* ... */
 });
-const sql = new SqlTag(pool);
+const sql = createPgTag(pool);
 ```
 
 Query:

@@ -1,13 +1,14 @@
-import { defaultSerializeValue } from './util';
-import { type SqlTagAbstractBase } from './SqlTagAbstractBase';
+import { type SqlTagDriver } from './SqlTagDriver';
 
-export type SqlExpression = SqlQuery<never, never>;
+export type SqlExpression = SqlQuery<never, never, never>;
 
 export type SqlQueryResult<TResult, TQueryInfo> = [TResult[], TQueryInfo, string, any[]];
 
-export class SqlQuery<TResult, TQueryInfo> extends Promise<SqlQueryResult<TResult, TQueryInfo>> {
+export class SqlQuery<TResult, TQueryInfo, TCursorOptions> extends Promise<
+  SqlQueryResult<TResult, TQueryInfo>
+> {
   constructor(
-    private driver: SqlTagAbstractBase<any>,
+    private driver: SqlTagDriver<any, any>,
     private templateStrings: string[],
     private values: any[],
   ) {
@@ -41,7 +42,9 @@ export class SqlQuery<TResult, TQueryInfo> extends Promise<SqlQueryResult<TResul
         const [subSql] = value.compile(params);
         sql += subSql;
       } else {
-        const serializedValue = this.driver.serializeValue(value);
+        const serializedValue = this.driver.serializeValue
+          ? this.driver.serializeValue(value)
+          : value;
         sql += this.driver.parameterizeValue(serializedValue, params.length);
         params.push(serializedValue);
       }
@@ -50,8 +53,8 @@ export class SqlQuery<TResult, TQueryInfo> extends Promise<SqlQueryResult<TResul
     return [sql, params];
   }
 
-  cursor(): AsyncIterable<TResult> {
+  cursor(options?: TCursorOptions): AsyncIterable<TResult> {
     const [sql, params] = this.compile();
-    return this.driver.cursor(sql, params);
+    return this.driver.cursor(sql, params, options);
   }
 }
