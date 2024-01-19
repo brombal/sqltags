@@ -37,6 +37,7 @@ SELECT * FROM users WHERE id = ?
 
 ## Contents
 
+- [Why?](#Why)
 - [Installation](#Installation)
   - [MySQL](https://github.com/brombal/sqltags/blob/main/drivers/mysql/README.md)
   - [PostgreSQL](https://github.com/brombal/sqltags/blob/main/drivers/postgres/README.md)
@@ -58,6 +59,61 @@ SELECT * FROM users WHERE id = ?
 - [Creating SqlTags for other databases](#Creating-SqlTags-for-other-databases)
 
 ---
+
+## Why?
+
+I suppose the answer to this depends on the question you are asking:
+
+### Why not just use regular strings?
+
+Regular strings might be fine for simple queries, but they don't help you write safe queries. As
+your queries grow in complexity, it can be difficult to keep track of all the values and identifiers
+that need to be parameterized or escaped. Additionally, it can be difficult to build larger queries
+out of smaller pieces using only string concatenation.
+
+SqlTags makes it easy to write safe queries by automatically parameterizing values and escaping
+identifiers. It also provides utilities for creating common SQL expressions, making it easier to
+build larger queries out of smaller pieces.
+
+### Why not use an ORM or query builder?
+
+ORMs and query builders are great for simple CRUD operations, but they can be a burden for more
+complex queries. They abstract away the underlying SQL, which can make it difficult to debug or
+optimize queries. Often, you'll want to write SQL queries directly in a database console to debug
+and optimize, and then copy them back into your application code. An ORM makes this difficult
+because the resulting SQL has to be translated every time you do this.
+
+SqlTags makes it easy to write SQL queries in a more transparent way, while still providing
+utilities to easily build more complex queries. The SQL is visible in your application code, making
+it less cumbersome to move it between your application and database console when needed.
+
+## Why not use existing library <insert library name here>?
+
+There are a number of existing libraries that provide similar functionality to SqlTags. I created
+SqlTags because they all lacked some key feature, or had a less-than-ideal API. Here are
+some comparisons with other popular libraries:
+
+### [Postgres](https://www.npmjs.com/package/postgres)
+
+- This excellent library was the main inspiration for SqlTags, but it only supports PostgreSQL.
+  SqlTags supports any database client library, although this comes at the expense of losing some
+  PostgreSQL-specific features being included directly in the API (e.g. `COPY` commands, save points, etc).
+
+### [SQL Template Strings](https://npmjs.com/package/sql-template-strings)
+
+- Doesn't provide any utilities for building SQL expressions, other than `.append()`.
+- Doesn't escape identifiers (relies on you using the database driver to do this).
+- You have to pass the result of the tag to a database driver function to execute the query, so the
+  API is a bit more verbose.
+- No support for custom database drivers (only supports MySQL, PostgreSQL, and sequelize).
+
+### [SQL Tag](https://npmjs.com/package/sql-tag)
+
+### [SQL Template Tag](https://npmjs.com/package/sql-template-tag)
+
+- Only supports MySQL, PostgreSQL, and sequelize.
+
+### [pg-template-tag](https://www.npmjs.com/package/pg-template-tag)
 
 ## Installation
 
