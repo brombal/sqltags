@@ -1,6 +1,6 @@
 {
   "name": "@sqltags/sqlite",
-  "version": "0.0.4",
+  "version": "0.0.19",
   "description": "SQLite driver for sqltags (@sqltags/core) 🔧✨ Safely create & execute parameterized SQL queries using template strings",
   "license": "MIT",
   "author": {
@@ -8,6 +8,19 @@
     "email": "alex@brombal.com",
     "url": "https://brombal.com"
   },
+  "keywords": [
+    "sql",
+    "query",
+    "parameterized",
+    "injection",
+    "template",
+    "tag",
+    "tagged",
+    "string",
+    "postgres",
+    "mysql",
+    "sqlite"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/brombal/sqltags.git"
@@ -23,7 +36,7 @@
     "build": "rm -rf dist && parcel build --no-cache"
   },
   "dependencies": {
-    "@sqltags/core": "*",
+    "@sqltags/core": "0.0.18",
     "sqlite3": "^5.1.7"
   }
 }

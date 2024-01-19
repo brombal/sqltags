@@ -2,23 +2,13 @@ name: Build, test and publish
 
 on:
   push:
-    tags: ['**/v*']
+    tags: ['v*']
 
 jobs:
   build-test-publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: Validate branch name
-        run: |
-          REF="${{ github.ref_name }}"
-          PACKAGE="${REF%/*}"
-          # package name must exist as directory
-          if [ ! -d "./$PACKAGE" ]; then
-            echo "Invalid branch name: $PACKAGE"
-            exit 1
-          fi
 
       - name: Install Dependencies
         run: npm ci
@@ -35,9 +25,6 @@ jobs:
         run: npm test
 
       - name: Publish
-        run: |
-          REF="${{ github.ref_name }}"
-          PACKAGE="${REF%/*}"
-          cd ./$PACKAGE && npm publish
+        run: npm run publish-all
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
