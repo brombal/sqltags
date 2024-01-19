@@ -1,6 +1,6 @@
 {
   "name": "@sqltags/core",
-  "version": "0.0.20",
+  "version": "0.0.22",
   "description": "Safely create & execute parameterized SQL queries using template strings 🔧✨ minimal API and works with any db driver (pg, mysql, sqlite, etc).",
   "license": "MIT",
   "author": {
@@ -33,14 +33,7 @@
     "node": ">=16.5"
   },
   "source": "./index.ts",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  }
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts"
 }

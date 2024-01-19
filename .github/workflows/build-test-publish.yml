@@ -13,9 +13,6 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
-
       - name: Run Docker test containers
         run: |
           docker compose up mysql pg -d
@@ -24,7 +21,18 @@ jobs:
       - name: Run Tests
         run: npm test
 
-      - name: Publish
-        run: npm run publish-all
+      - name: Build & publish core
+        run: |
+          npm run build --workspace=core
+          npm publish --workspace=core
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Install core to drivers, build & publish
+        run: |
+          sleep 10
+          npm install @sqltags/core@latest --workspace=drivers
+          npm run build --workspace=drivers
+          npm publish --workspace=drivers
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
