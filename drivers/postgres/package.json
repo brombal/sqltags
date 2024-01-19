@@ -1,0 +1,41 @@
+{
+  "name": "@sqltags/pg",
+  "version": "0.0.11",
+  "description": "PostgreSQL driver for SQLTags (@sqltags/core) \uD83D\uDD27✨ Safely create & execute parameterized SQL queries using template strings",
+  "license": "MIT",
+  "author": {
+    "name": "Alex Brombal",
+    "email": "alex@brombal.com",
+    "url": "https://brombal.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/brombal/sqltags.git"
+  },
+  "engines": {
+    "node": ">=16.5"
+  },
+  "source": "./postgres.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && parcel build --no-cache"
+  },
+  "dependencies": {
+    "@sqltags/core": "*",
+    "pg": "^8.11.3",
+    "pg-cursor": "^2.10.3"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.10.9",
+    "@types/pg-cursor": "^2.7.2"
+  }
+}

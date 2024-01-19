@@ -1,0 +1,25 @@
+services:
+  mysql:
+    image: mysql/mysql-server:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - 3306:3306
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+
+  pg:
+    image: postgres:16.1
+    container_name: pg
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: db
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data/pg:/var/lib/postgresql/data
