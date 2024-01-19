@@ -1,6 +1,6 @@
 {
   "name": "@sqltags/sqlite",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "SQLite driver for sqltags (@sqltags/core) 🔧✨ Safely create & execute parameterized SQL queries using template strings",
   "license": "MIT",
   "author": {

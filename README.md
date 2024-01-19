@@ -2,6 +2,8 @@
 
 ![Build status](https://github.com/brombal/sqltags/actions/workflows/build-test.yml/badge.svg?branch=main)
 [![npm version](https://badge.fury.io/js/@sqltags%2Fcore.svg)](https://badge.fury.io/js/@sqltags/core)
+[![Coverage Status](https://coveralls.io/repos/github/brombal/sqltags/badge.svg?branch=main)](https://coveralls.io/github/brombal/sqltags?branch=main)
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
 🔧✨ Safely create & execute parameterized SQL queries using tagged template strings.
 
@@ -93,17 +95,17 @@ There are a number of existing libraries that provide similar functionality to S
 SqlTags because they all lacked some key feature or had a less-than-ideal API. Here are some
 comparisons with other popular libraries:
 
-- **Postgres [https://www.npmjs.com/package/postgres]**
+- **Postgres `https://www.npmjs.com/package/postgres`**
 
   - This excellent library was the main inspiration for SqlTags, but it only supports Postgres.
   - Personally, I found it confusing to have so many different ways to call the `sql()` function.
     SqlTags is more explicit with the features, using separate methods such as `sql.id()`,
     `sql.join()`, etc.
 
-- **SQL Template Strings [https://npmjs.com/package/sql-template-strings]**
-- **SQL Tag [https://npmjs.com/package/sql-tag]**
-- **SQL Template Tag [https://npmjs.com/package/sql-template-tag]**
-- **pg-template-tag [https://www.npmjs.com/package/pg-template-tag]**
+- **SQL Template Strings `https://npmjs.com/package/sql-template-strings`**
+- **SQL Tag `https://npmjs.com/package/sql-tag`**
+- **SQL Template Tag `https://npmjs.com/package/sql-template-tag`**
+- **pg-template-tag `https://www.npmjs.com/package/pg-template-tag`**
   - All these options have a more verbose API/syntax, requiring you to pass the result of the tag to
     a database driver function to execute the query.
   - Few or no utilities for building common SQL expressions or escaping identifiers.
