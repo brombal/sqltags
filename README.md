@@ -249,6 +249,8 @@ const [rows] = await sql`
 
 **Remember that embedding plain strings without the `sql` tag will escape/parameterize them.**
 
+- `sql.raw(value: string)`
+
 To embed variables directly without parameterizing them, use the tag's `.raw()` method:
 
 ```js

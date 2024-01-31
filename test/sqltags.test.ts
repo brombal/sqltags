@@ -287,6 +287,19 @@ describe('sqltags', () => {
     ]);
   });
 
+  test('.raw embeds raw strings', async () => {
+    const [sql] = createMockSqlTag();
+    const [, info] = await sql`
+      SELECT * FROM users
+      WHERE date = ${sql.raw('NOW()')}
+    `;
+
+    expect(info).toEqual([
+      `SELECT * FROM users
+      WHERE date = NOW()`,
+    ]);
+  });
+
   test('calling .compile() returns sql and params', async () => {
     const [sql] = createMockSqlTag();
     const debug = sql`

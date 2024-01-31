@@ -23,6 +23,8 @@ jobs:
 
       - name: Build & publish core
         run: |
+          mv ./.gha.npmrc ./.npmrc
+          mv ../README.md ./
           npm run build --workspace=core
           npm publish --workspace=core
         env:

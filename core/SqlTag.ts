@@ -40,6 +40,17 @@ export class SqlTag<TQueryInfo, TCursorOptions> {
   }
 
   /**
+   * Embeds variables directly without parameterizing them.
+   *
+   * @param string The string to embed.
+   * @returns A SqlExpression representing the raw string.
+   * @example sql.raw('NOW()') // NOW()
+   */
+  raw(string: string): SqlExpression {
+    return new SqlQuery(this.driver, [string], []);
+  }
+
+  /**
    * Joins a series of values or expressions with 'AND', wrapped in parentheses.
    *
    * @param values The values or expressions to join.
