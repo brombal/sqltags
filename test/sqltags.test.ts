@@ -273,6 +273,20 @@ describe('sqltags', () => {
     ]);
   });
 
+  test('value in undefined array', async () => {
+    const [sql] = createMockSqlTag();
+    const [, info] = await sql`
+      SELECT * FROM users
+      WHERE ${sql.in('id', undefined)}
+    `;
+
+    expect(info).toEqual([
+      `SELECT * FROM users
+      WHERE $1`,
+      0,
+    ]);
+  });
+
   test('value in array with custom ifEmpty', async () => {
     const [sql] = createMockSqlTag();
     const [, info] = await sql`
@@ -343,5 +357,50 @@ describe('sqltags', () => {
     const [query, params] = sql.compile`SELECT * FROM users WHERE id = ${1}`;
     expect(query).toEqual('SELECT * FROM users WHERE id = $1');
     expect(params).toEqual([1]);
+  });
+
+  test('beforeQuery event', async () => {
+    const [sql] = createMockSqlTag();
+
+    const beforeQuery = jest.fn();
+    sql.on('beforeQuery', beforeQuery);
+
+    await sql`SELECT * FROM users WHERE id = ${1}`;
+
+    expect(beforeQuery).toHaveBeenCalledTimes(1);
+    const callParams = beforeQuery.mock.calls[0][0];
+    expect(callParams.queryText).toEqual('SELECT * FROM users WHERE id = $1');
+    expect(callParams.params).toEqual([1]);
+  });
+
+  test('beforeQuery event (cursors)', async () => {
+    const [sql] = createMockSqlTag();
+
+    const beforeQuery = jest.fn();
+    sql.on('beforeQuery', beforeQuery);
+
+    sql`SELECT * FROM users WHERE id = ${1}`.cursor();
+
+    expect(beforeQuery).toHaveBeenCalledTimes(1);
+    const callParams = beforeQuery.mock.calls[0][0];
+    expect(callParams.queryText).toEqual('SELECT * FROM users WHERE id = $1');
+    expect(callParams.params).toEqual([1]);
+  });
+
+  test('afterQuery event', async () => {
+    const [sql] = createMockSqlTag();
+
+    const afterQuery = jest.fn();
+    sql.on('afterQuery', afterQuery);
+
+    await sql`SELECT * FROM users WHERE id = ${1}`;
+
+    expect(afterQuery).toHaveBeenCalledTimes(1);
+    const callParams = afterQuery.mock.calls[0][0];
+    expect(callParams.queryText).toEqual('SELECT * FROM users WHERE id = $1');
+    expect(callParams.params).toEqual([1]);
+    expect(callParams.rows).toEqual(testUsers);
+    expect(callParams.queryInfo).toEqual(['SELECT * FROM users WHERE id = $1', 1]);
+    expect(callParams.ms).toBeGreaterThan(0);
   });
 });

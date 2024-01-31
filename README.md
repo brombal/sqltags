@@ -58,6 +58,7 @@ SELECT * FROM users WHERE id = ?
     - [INSERT expressions](#INSERT-expressions)
     - [IN expressions](#IN-expressions)
     - [Joining/concatenating values](#Joiningconcatenating-values)
+- [Query Events](#Query-Events)
 - [Creating SqlTags for other databases](#Creating-SqlTags-for-other-databases)
 
 ---
@@ -435,6 +436,45 @@ const [rows] = await sql`
 // SELECT * FROM users WHERE id = ? AND status = ?
 // with parameters: [123, 'active']
 ```
+
+## Query Events
+
+The SqlTag class extends EventEmitter and provides a strongly-typed interface for handling database
+query events. This allows you to attach listeners to specific events emitted during the query
+lifecycle. For example:
+
+```ts
+sql.on('afterQuery', (event) => {
+  // ...
+});
+```
+
+Here are the events you can listen to:
+
+### `'beforeQuery'`
+
+Emitted immediately before a query is executed. Use this event to inspect or log the query before it
+runs.
+
+The event object has the following properties:
+
+- `queryText` - The query string.
+- `params` - The query parameters.
+
+### `'afterQuery'`
+
+Emitted after a query is executed and the result is received. Use this event to inspect or log the
+query result and performance.
+
+The event object has the following properties:
+
+- `queryText` - The query string.
+- `params` - The query parameters.
+- `result` - The query result.
+- `info` - Additional information about the query (e.g. column definitions, rows affected, etc).
+- `ms` - The query execution time in milliseconds.
+
+> Note that this event is not emitted for cursors.
 
 ## Creating SqlTags for other database clients
 

@@ -1,4 +1,4 @@
-import { type SqlTagDriver } from './SqlTagDriver';
+import { _driver, SqlTag } from './SqlTag';
 
 export type SqlExpression = SqlQuery<never, never, never>;
 
@@ -8,7 +8,7 @@ export class SqlQuery<TResult, TQueryInfo, TCursorOptions> extends Promise<
   SqlQueryResult<TResult, TQueryInfo>
 > {
   constructor(
-    private driver: SqlTagDriver<any, any>,
+    private sqlTag: SqlTag<any, any>,
     private templateStrings: string[],
     private values: any[],
   ) {
@@ -22,9 +22,12 @@ export class SqlQuery<TResult, TQueryInfo, TCursorOptions> extends Promise<
       | null,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
   ): Promise<TResult1 | TResult2> {
-    const [text, params] = this.compile();
-    return this.driver.query(text, params).then(([rows, queryInfo]) => {
-      return onfulfilled!([rows, queryInfo, text, params]);
+    const now = performance.now();
+    const [queryText, params] = this.compile();
+    this.sqlTag.emit('beforeQuery', { queryText, params });
+    return this.sqlTag[_driver].query(queryText, params).then(([rows, queryInfo]) => {
+      this.sqlTag.emit('afterQuery', { queryText, params, rows, queryInfo, ms: performance.now() - now });
+      return onfulfilled!([rows, queryInfo, queryText, params]);
     }, onrejected);
   }
 
@@ -42,10 +45,10 @@ export class SqlQuery<TResult, TQueryInfo, TCursorOptions> extends Promise<
         const [subSql] = value.compile(params);
         sql += subSql;
       } else {
-        const serializedValue = this.driver.serializeValue
-          ? this.driver.serializeValue(value)
+        const serializedValue = this.sqlTag[_driver].serializeValue
+          ? this.sqlTag[_driver].serializeValue(value)
           : value;
-        sql += this.driver.parameterizeValue(serializedValue, params.length);
+        sql += this.sqlTag[_driver].parameterizeValue(serializedValue, params.length);
         params.push(serializedValue);
       }
     }
@@ -54,7 +57,8 @@ export class SqlQuery<TResult, TQueryInfo, TCursorOptions> extends Promise<
   }
 
   cursor(options?: TCursorOptions): AsyncIterable<TResult> {
-    const [sql, params] = this.compile();
-    return this.driver.cursor(sql, params, options);
+    const [queryText, params] = this.compile();
+    this.sqlTag.emit('beforeQuery', { queryText, params });
+    return this.sqlTag[_driver].cursor(queryText, params, options);
   }
 }

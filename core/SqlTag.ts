@@ -1,14 +1,90 @@
 import { SqlQuery, type SqlExpression } from './SqlQuery';
 import { SqlTagDriver } from './SqlTagDriver';
 import { Callable } from './util';
+import EventEmitter from 'node:events';
 
-export class SqlTag<TQueryInfo, TCursorOptions> {
-  constructor(private readonly driver: SqlTagDriver<TQueryInfo, TCursorOptions>) {
+/**
+ * The event types that SqlTag emits.
+ */
+interface SqlTagEvents<TQueryInfo> {
+  /**
+   * Emitted immediately before a query is executed.
+   */
+  beforeQuery: (event: {
+    /**
+     * The compiled query text.
+     */
+    queryText: string;
+
+    /**
+     * The query parameters.
+     */
+    params: any[];
+  }) => void;
+
+  /**
+   * Emitted immediately after a query is executed.
+   */
+  afterQuery: (event: {
+    /**
+     * The compiled query text.
+     */
+    queryText: string;
+
+    /**
+     * The query parameters.
+     */
+    params: any[];
+
+    /**
+     * The result rows.
+     */
+    rows: any[];
+
+    /**
+     * The query info.
+     */
+    queryInfo: TQueryInfo;
+
+    /**
+     * The time it took to execute the query in milliseconds.
+     */
+    ms: number;
+  }) => void;
+}
+
+/**
+ * Extends the SqlTag class definition to define the events that are emitted.
+ */
+export declare interface SqlTag<TQueryInfo, TCursorOptions> {
+  on<U extends keyof SqlTagEvents<TQueryInfo>>(
+    event: U,
+    listener: SqlTagEvents<TQueryInfo>[U],
+  ): this;
+
+  emit<U extends keyof SqlTagEvents<TQueryInfo>>(
+    event: U,
+    ...args: Parameters<SqlTagEvents<TQueryInfo>[U]>
+  ): boolean;
+}
+
+/**
+ * Symbol used to reference the driver property on the SqlTag class within the library (the
+ * property is not accessible publicly).
+ */
+export const _driver = Symbol('driver');
+
+export class SqlTag<TQueryInfo, TCursorOptions> extends EventEmitter {
+  [_driver]: SqlTagDriver<TQueryInfo, TCursorOptions>;
+
+  constructor(driver: SqlTagDriver<TQueryInfo, TCursorOptions>) {
+    super();
+    this[_driver] = driver;
     return Callable(this);
   }
 
   [Callable.call]<T>(strings: TemplateStringsArray, ...values: any[]) {
-    return new SqlQuery<T, TQueryInfo, TCursorOptions>(this.driver, [...strings], values);
+    return new SqlQuery<T, TQueryInfo, TCursorOptions>(this, [...strings], values);
   }
 
   /**
@@ -21,8 +97,8 @@ export class SqlTag<TQueryInfo, TCursorOptions> {
    */
   join(values: any[], joinWith = ', '): SqlExpression {
     const filteredValues = values.filter((value) => value !== undefined);
-    return new SqlQuery(
-      this.driver,
+    return new SqlQuery<never, never, never>(
+      this,
       ['', ...Array(filteredValues.length - 1).fill(joinWith), ''],
       filteredValues,
     );
@@ -36,7 +112,7 @@ export class SqlTag<TQueryInfo, TCursorOptions> {
    * @example sql.id('name') // `name`
    */
   id(identifier: string): SqlExpression {
-    return new SqlQuery(this.driver, [this.driver.escapeIdentifier(identifier)], []);
+    return new SqlQuery(this, [this[_driver].escapeIdentifier(identifier)], []);
   }
 
   /**
@@ -47,7 +123,7 @@ export class SqlTag<TQueryInfo, TCursorOptions> {
    * @example sql.raw('NOW()') // NOW()
    */
   raw(string: string): SqlExpression {
-    return new SqlQuery(this.driver, [string], []);
+    return new SqlQuery(this, [string], []);
   }
 
   /**
@@ -90,9 +166,9 @@ export class SqlTag<TQueryInfo, TCursorOptions> {
    * @returns A SqlExpression representing the IN expression.
    * @example sql.in('id', [1, 2, 3]) // id IN (1, 2, 3)
    */
-  in(column: string, values: any[], ifEmpty: any = 0): SqlExpression {
-    const filteredValues = values.filter((value) => value !== undefined);
-    if (!filteredValues.length) return this`${ifEmpty}` as SqlExpression;
+  in(column: string, values: any[] | undefined | null, ifEmpty: any = 0): SqlExpression {
+    const filteredValues = values?.filter((value) => value !== undefined);
+    if (!filteredValues?.length) return this`${ifEmpty}` as SqlExpression;
     return this`${this.id(column)} IN (${this.join(filteredValues)})` as SqlExpression;
   }
 
@@ -164,7 +240,7 @@ export class SqlTag<TQueryInfo, TCursorOptions> {
    * @returns A 2-tuple containing the parameterized query string, and parameters as an array.
    */
   compile(strings: TemplateStringsArray, ...values: any[]) {
-    return new SqlQuery(this.driver, [...strings], values).compile();
+    return new SqlQuery(this, [...strings], values).compile();
   }
 }
 
