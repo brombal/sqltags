@@ -47,8 +47,8 @@ describe('mysql', () => {
   });
 
   test('insert/select values', async () => {
-    const [, info] = await sql`SELECT 1`;
-    expect(info.length).toBe(1);
+    const rows = await sql`SELECT 1`;
+    expect(rows.info.length).toBe(1);
   });
 
   executeDriverTests('mysql', () => sql);
@@ -77,7 +77,7 @@ describe('mysql', () => {
 
     // load data using regular query several times
     for (let i = 0; i < 5; i++) {
-      const [userRows] = await sql<User>`SELECT * FROM users`;
+      const userRows = await sql<User>`SELECT * FROM users`;
 
       const bytesUsed: number[] = [];
 

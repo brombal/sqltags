@@ -151,12 +151,13 @@ For documentation on the driver-specific setup, check out their readme pages:
 To execute a query, simply use the tag with a SQL query, and `await` the result:
 
 ```ts
-const [rows, info] = await sql<User>`SELECT * FROM users`;
+const users = await sql<User>`SELECT * FROM users`;
 ```
 
-The result is a 2-tuple of `[rows, info]`, where `rows` is an array of the query results, and `info`
-is any additional information about the query that the driver provides (e.g. the column information,
-or number of affected rows, etc; this value is defined by the underlying database driver).
+The result is an array containing the query results. The array also has an additional property
+`info`, which has additional information about the query that the driver provides (e.g. the column
+information, or number of affected rows, etc; this value is defined by the underlying database
+driver).
 
 ## Cursors
 
@@ -188,10 +189,11 @@ interface User {
   // etc.
 }
 
-const [users, info] = await sql<User>`SELECT * FROM users`;
+const users = await sql<User>`SELECT * FROM users`;
 ```
 
-`users` will be of type User[]. The type of `info` is defined by the driver.
+`users` will be of type `User[]`, with an additional property `users.info` which contains additional
+query execution information (the type is defined by the driver).
 
 ## Building SQL queries
 
@@ -201,7 +203,7 @@ Values will automatically be parameterized when they are interpolated into the q
 string.
 
 ```js
-const [rows] = await sql`SELECT * FROM users WHERE id = ${userId}`;
+const users = await sql`SELECT * FROM users WHERE id = ${userId}`;
 ```
 
 "Parameterized" means that they are replaced by a placeholder (e.g. `?` or `$1`) and passed to the
@@ -213,7 +215,7 @@ prevents SQL injection attacks.
 >
 > ```ts
 > const userId = undefined;
-> const [rows] = await sql`SELECT * FROM users WHERE id = ${userId}`;
+> const users = await sql`SELECT * FROM users WHERE id = ${userId}`;
 > // Executes an invalid statement:
 > // `SELECT * FROM users WHERE id = `
 > // with no query parameters!
@@ -231,7 +233,7 @@ tag's `.id()` method:
 
 ```js
 const table = 'users';
-const [tableValues] = await sql`SELECT * FROM ${sql.id(table)}`;
+const users = await sql`SELECT * FROM ${sql.id(table)}`;
 ```
 
 Identifiers are escaped appropriately by the driver, but are not parameterized.
@@ -241,7 +243,7 @@ Identifiers are escaped appropriately by the driver, but are not parameterized.
 To nest SQL expressions, just embed a `sql` tag expression:
 
 ```js
-const [rows] = await sql`
+const users = await sql`
   SELECT *
   FROM users
   ${userId ? sql`WHERE id = ${userId}` : undefined}
@@ -256,7 +258,7 @@ To embed variables directly without parameterizing them, use the tag's `.raw()` 
 
 ```js
 const whereClause = "status = 'active'";
-const [rows] = await sql`
+const users = await sql`
   SELECT *
   FROM users
   where ${sql.raw(whereClause)}
@@ -300,7 +302,7 @@ if (userId) {
 // Join the query parts, separating each with a newline:
 const query = sql.join(queryParts, '\n');
 
-const [rows] = await query;
+const users = await query;
 ```
 
 ## SQL expression helpers
@@ -320,7 +322,7 @@ and will be grouped in parentheses appropriately. `undefined` values are omitted
 with other falsy values (e.g. `null`, `false`, `0`).
 
 ```js
-const [rows] = await sql`
+const users = await sql`
   SELECT *
   FROM users
   WHERE ${sql.and(
@@ -355,7 +357,7 @@ const user = {
 };
 
 // Updates only the `name` and `status` columns:
-const [rows] = await sql`
+await sql`
   UPDATE users
   SET ${sql.setValues(user, 'name', 'status')}
   WHERE id = ${user.id}
@@ -397,7 +399,7 @@ To generate an expression like `` `column` IN (value1, value2, etc) ``, use the 
 method:
 
 ```js
-const [rows] = await sql`SELECT * FROM users WHERE ${sql.in('id', [1, 2, 3])}`;
+const users = await sql`SELECT * FROM users WHERE ${sql.in('id', [1, 2, 3])}`;
 
 // SELECT * FROM users WHERE `id` IN (?, ?, ?)
 // with parameters: [1, 2, 3]
@@ -411,7 +413,7 @@ To join (concatenate) an array of values or expressions, use the tag's `.join()`
 
 ```js
 const ids = [1, 2, 3];
-const [rows] = await sql`SELECT * FROM users WHERE id IN (${sql.join(ids)})`;
+const users = await sql`SELECT * FROM users WHERE id IN (${sql.join(ids)})`;
 
 // SELECT * FROM users WHERE id IN (?, ?, ?)
 // with parameters: [1, 2, 3]
@@ -421,7 +423,7 @@ Values will be joined with a comma by default, but you can pass a specific separ
 argument:
 
 ```js
-const [rows] = await sql`
+const users = await sql`
   SELECT * FROM users 
   WHERE ${sql.join(
     [
@@ -472,6 +474,7 @@ The event object has the following properties:
 - `params` - The query parameters.
 - `result` - The query result.
 - `info` - Additional information about the query (e.g. column definitions, rows affected, etc).
+  This is provided by the database driver.
 - `ms` - The query execution time in milliseconds.
 
 > Note that this event is not emitted for cursors.
@@ -590,7 +593,7 @@ const db = new CoolDbConnection({
 const sql = createCoolDbTag(db);
 
 // Query!
-const [rows, info] = await sql`SELECT * FROM users WHERE id = ${userId}`;
+const users = await sql`SELECT * FROM users WHERE id = ${userId}`;
 ```
 
 ## Contributing

@@ -45,33 +45,33 @@ describe('sqltags', () => {
   test('interpolate value', async () => {
     const [sql, driver] = createMockSqlTag();
     const res = sql<User>`SELECT * FROM users WHERE id = ${1} AND name = ${'bob'}`;
-    const [users, info] = await res;
+    const users = await res;
     expect(users).toEqual(testUsers);
-    expect(info).toEqual(['SELECT * FROM users WHERE id = $1 AND name = $2', 1, 'bob']);
+    expect(users.info).toEqual(['SELECT * FROM users WHERE id = $1 AND name = $2', 1, 'bob']);
     expect(driver.query).toHaveBeenCalledTimes(1);
   });
 
   test('interpolate identifier', async () => {
     const [sql] = createMockSqlTag();
     const table = 'users';
-    const [users, info] = await sql<User>`SELECT * FROM ${sql.id(table)}`;
+    const users = await sql<User>`SELECT * FROM ${sql.id(table)}`;
     expect(users).toEqual(testUsers);
-    expect(info).toEqual(['SELECT * FROM `users`']);
+    expect(users.info).toEqual(['SELECT * FROM `users`']);
   });
 
   test('interpolate nested expression', async () => {
     const [sql, driver] = createMockSqlTag();
-    const [users, info] =
+    const users =
       await sql<User>`SELECT * FROM users ${sql`WHERE id = ${1}`} ${sql`AND name = ${'bob'}`}`;
     expect(users).toEqual(testUsers);
-    expect(info).toEqual(['SELECT * FROM users WHERE id = $1 AND name = $2', 1, 'bob']);
+    expect(users.info).toEqual(['SELECT * FROM users WHERE id = $1 AND name = $2', 1, 'bob']);
     expect(driver.query).toHaveBeenCalledTimes(1);
   });
 
   test('interpolate undefined', async () => {
     const [sql] = createMockSqlTag();
-    const [_users, info] = await sql<User>`SELECT * FROM users ${undefined}`;
-    expect(info).toEqual(['SELECT * FROM users']);
+    const users = await sql<User>`SELECT * FROM users ${undefined}`;
+    expect(users.info).toEqual(['SELECT * FROM users']);
   });
 
   test('custom serialization', async () => {
@@ -79,23 +79,23 @@ describe('sqltags', () => {
       if (value === 'special-value') return 'serialized:special-value';
       return value;
     });
-    const [, info] = await sql<User>`SELECT * FROM users WHERE value = ${'special-value'}`;
-    expect(info).toEqual(['SELECT * FROM users WHERE value = $1', 'serialized:special-value']);
+    const users = await sql<User>`SELECT * FROM users WHERE value = ${'special-value'}`;
+    expect(users.info).toEqual(['SELECT * FROM users WHERE value = $1', 'serialized:special-value']);
   });
 
   test('join', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql<number>`SELECT * FROM users WHERE id IN (${sql.join([1, 2, 3])})`;
-    expect(info).toEqual(['SELECT * FROM users WHERE id IN ($1, $2, $3)', 1, 2, 3]);
+    const users = await sql<number>`SELECT * FROM users WHERE id IN (${sql.join([1, 2, 3])})`;
+    expect(users.info).toEqual(['SELECT * FROM users WHERE id IN ($1, $2, $3)', 1, 2, 3]);
   });
 
   test('join identifiers and expressions with custom joiner', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql<User>`
+    const users = await sql<User>`
       SELECT ${sql.join([sql.id('name'), sql.id('email')])} 
       FROM users 
       WHERE ${sql.join([sql`id = ${1}`, sql`name = ${'Alex'}`], ' AND ')}`;
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `SELECT \`name\`, \`email\` 
       FROM users 
       WHERE id = $1 AND name = $2`,
@@ -106,12 +106,12 @@ describe('sqltags', () => {
 
   test('join escaped values omits undefined', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql<User>`SELECT * FROM users WHERE id IN (${sql.join([
+    const users = await sql<User>`SELECT * FROM users WHERE id IN (${sql.join([
       1,
       undefined,
       3,
     ])})`;
-    expect(info).toEqual(['SELECT * FROM users WHERE id IN ($1, $2)', 1, 3]);
+    expect(users.info).toEqual(['SELECT * FROM users WHERE id IN ($1, $2)', 1, 3]);
   });
 
   test('cursor', async () => {
@@ -133,7 +133,7 @@ describe('sqltags', () => {
 
   test('and/or', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql<User>`
+    const users = await sql<User>`
       SELECT * FROM users
       WHERE ${sql.and(
         //
@@ -146,7 +146,7 @@ describe('sqltags', () => {
         ),
       )}`;
 
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `SELECT * FROM users
       WHERE (id = $1 AND name = $2 AND (status = $3 OR status = $4))`,
       1,
@@ -158,13 +158,13 @@ describe('sqltags', () => {
 
   test('update with auto values', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql`
+    const users = await sql`
       UPDATE users
       SET ${sql.setValues(testUsers[0])}
       WHERE id = ${testUsers[0].id}
     `;
 
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `UPDATE users
       SET \`id\` = $1, \`name\` = $2, \`email\` = $3
       WHERE id = $4`,
@@ -177,13 +177,13 @@ describe('sqltags', () => {
 
   test('update with picked values', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql`
+    const users = await sql`
       UPDATE users
       SET ${sql.setValues(testUsers[0], 'name', 'email')}
       WHERE id = ${testUsers[0].id}
     `;
 
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `UPDATE users
       SET \`name\` = $1, \`email\` = $2
       WHERE id = $3`,
@@ -195,12 +195,12 @@ describe('sqltags', () => {
 
   test('insert single row with auto values', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql`
+    const users = await sql`
       INSERT INTO users
       ${sql.insertValues(testUsers[0])}
     `;
 
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `INSERT INTO users
       (\`id\`, \`name\`, \`email\`) VALUES ($1, $2, $3)`,
       testUsers[0].id,
@@ -211,12 +211,12 @@ describe('sqltags', () => {
 
   test('insert single row with picked values', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql`
+    const users = await sql`
       INSERT INTO users
       ${sql.insertValues(testUsers[0], 'name', 'email')}
     `;
 
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `INSERT INTO users
       (\`name\`, \`email\`) VALUES ($1, $2)`,
       testUsers[0].name,
@@ -226,12 +226,12 @@ describe('sqltags', () => {
 
   test('insert multiple rows with auto values', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql`
+    const users = await sql`
       INSERT INTO users
       ${sql.insertValues(testUsers)}
     `;
 
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `INSERT INTO users
       (\`id\`, \`name\`, \`email\`) VALUES ($1, $2, $3), ($4, $5, $6)`,
       testUsers[0].id,
@@ -245,12 +245,12 @@ describe('sqltags', () => {
 
   test('value in array', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql`
+    const users = await sql`
       SELECT * FROM users
       WHERE ${sql.in('id', [1, 2, 3])}
     `;
 
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `SELECT * FROM users
       WHERE \`id\` IN ($1, $2, $3)`,
       1,
@@ -261,12 +261,12 @@ describe('sqltags', () => {
 
   test('value in empty array', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql`
+    const users = await sql`
       SELECT * FROM users
       WHERE ${sql.in('id', [])}
     `;
 
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `SELECT * FROM users
       WHERE $1`,
       0,
@@ -275,12 +275,12 @@ describe('sqltags', () => {
 
   test('value in undefined array', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql`
+    const users = await sql`
       SELECT * FROM users
       WHERE ${sql.in('id', undefined)}
     `;
 
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `SELECT * FROM users
       WHERE $1`,
       0,
@@ -289,12 +289,12 @@ describe('sqltags', () => {
 
   test('value in array with custom ifEmpty', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql`
+    const users = await sql`
       SELECT * FROM users
       WHERE ${sql.in('id', [], 1)}
     `;
 
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `SELECT * FROM users
       WHERE $1`,
       1,
@@ -303,12 +303,12 @@ describe('sqltags', () => {
 
   test('.raw embeds raw strings', async () => {
     const [sql] = createMockSqlTag();
-    const [, info] = await sql`
+    const users = await sql`
       SELECT * FROM users
       WHERE date = ${sql.raw('NOW()')}
     `;
 
-    expect(info).toEqual([
+    expect(users.info).toEqual([
       `SELECT * FROM users
       WHERE date = NOW()`,
     ]);

@@ -8,7 +8,7 @@ describe('pg client', () => {
     user: 'user',
     password: 'password',
     database: 'db',
-    port: 5432,
+    port: 5431,
   });
 
   let sql: ReturnType<typeof createPgTag>;
@@ -39,8 +39,8 @@ describe('pg client', () => {
   });
 
   test('insert/select values', async () => {
-    const [_rows, info] = await sql`SELECT 1`;
-    expect(info.fields.length).toEqual(1);
+    const rows = await sql`SELECT 1`;
+    expect(rows.info.fields.length).toEqual(1);
   });
 
   executeDriverTests('pg client', () => sql);
@@ -52,7 +52,7 @@ describe('pg pool', () => {
     user: 'user',
     password: 'password',
     database: 'db',
-    port: 5432,
+    port: 5431,
   });
 
   let sql: ReturnType<typeof createPgTag>;
@@ -82,8 +82,8 @@ describe('pg pool', () => {
   });
 
   test('insert/select values', async () => {
-    const [_rows, info] = await sql`SELECT 1`;
-    expect(info.fields.length).toEqual(1);
+    const rows = await sql`SELECT 1`;
+    expect(rows.info.fields.length).toEqual(1);
   });
 
   executeDriverTests('pg pool', () => sql);

@@ -27,8 +27,8 @@ export function executeDriverTests(testPrefix: string, getSql: () => SqlTag<any,
       INSERT INTO users ${sql.insertValues(testUsers)}
     `;
 
-    const [users, info] = await sql<User>`SELECT * FROM users`;
-    expect(users).toEqual(testUsers);
+    const users = await sql<User>`SELECT * FROM users`;
+    expect([...users]).toEqual(testUsers);
   });
 
   test(`${testPrefix}: cursor`, async () => {

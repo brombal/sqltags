@@ -2,7 +2,7 @@ import { _driver, SqlTag } from './SqlTag';
 
 export type SqlExpression = SqlQuery<never, never, never>;
 
-export type SqlQueryResult<TResult, TQueryInfo> = [TResult[], TQueryInfo, string, any[]];
+export type SqlQueryResult<TResult, TQueryInfo> = TResult[] & { query: string; params: any[]; info: TQueryInfo };
 
 export class SqlQuery<TResult, TQueryInfo, TCursorOptions> extends Promise<
   SqlQueryResult<TResult, TQueryInfo>
@@ -27,7 +27,11 @@ export class SqlQuery<TResult, TQueryInfo, TCursorOptions> extends Promise<
     this.sqlTag.emit('beforeQuery', { queryText, params });
     return this.sqlTag[_driver].query(queryText, params).then(([rows, queryInfo]) => {
       this.sqlTag.emit('afterQuery', { queryText, params, rows, queryInfo, ms: performance.now() - now });
-      return onfulfilled!([rows, queryInfo, queryText, params]);
+      const result = rows as SqlQueryResult<TResult, TQueryInfo>;
+      result.query = queryText;
+      result.params = params;
+      result.info = queryInfo;
+      return onfulfilled!(result);
     }, onrejected);
   }
 
