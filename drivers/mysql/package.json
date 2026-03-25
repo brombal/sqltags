@@ -1,6 +1,6 @@
 {
   "name": "@sqltags/mysql",
-  "version": "0.0.26",
+  "version": "0.1.0",
   "description": "MySQL driver for sqltags (@sqltags/core) 🔧✨ Safely create & execute parameterized SQL queries using template strings",
   "license": "MIT",
   "author": {
@@ -33,9 +33,10 @@
   "main": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "rm -rf dist && parcel build --no-cache"
+    "build": "rm -rf dist && rollup -c"
   },
   "dependencies": {
+    "@sqltags/core": "^0.1.0",
     "mysql2": "^3.7.0"
   }
 }

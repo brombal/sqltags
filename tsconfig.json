@@ -9,6 +9,7 @@
     "strict": true,
     "noFallthroughCasesInSwitch": true,
     "useUnknownInCatchVariables": true,
+    "allowSyntheticDefaultImports": true,
     "types": ["node", "jest"]
   }
 }

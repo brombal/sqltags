@@ -1,6 +1,6 @@
 {
   "name": "@sqltags/core",
-  "version": "0.0.26",
+  "version": "0.1.1",
   "description": "Safely create & execute parameterized SQL queries using template strings 🔧✨ minimal API and works with any db driver (pg, mysql, sqlite, etc).",
   "license": "MIT",
   "author": {
@@ -26,7 +26,9 @@
     "url": "git://github.com/brombal/sqltags.git"
   },
   "scripts": {
-    "build": "rm -rf ./dist && parcel build --no-cache"
+    "build": "rm -rf ./dist && rollup -c",
+    "prepublishOnly": "cp ../README.md ./",
+    "postpublish": "rm -rf ./README.md"
   },
   "engines": {
     "node": ">=16.5"

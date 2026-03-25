@@ -14,7 +14,7 @@
     "node": ">=16.5"
   },
   "scripts": {
-    "clean": "rm -rf ./.parcel-cache ./core/dist ./drivers/*/dist",
+    "clean": "rm -rf ./core/dist ./drivers/*/dist",
     "build": "npm run clean && npm run build --workspaces",
     "test": "node --expose-gc ./node_modules/.bin/jest --coverage --detectOpenHandles",
     "publish-all": "npm publish --workspaces"
@@ -27,14 +27,15 @@
   ],
   "devDependencies": {
     "@faker-js/faker": "^8.3.1",
-    "@parcel/packager-ts": "^2.11.0",
-    "@parcel/transformer-typescript-types": "^2.11.0",
+    "@rollup/plugin-typescript": "^12.3.0",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.10.8",
     "jest": "^29.7.0",
-    "parcel": "^2.11.0",
     "prettier": "^3.1.1",
+    "rollup": "^4.60.0",
+    "rollup-plugin-dts": "^6.4.1",
     "ts-jest": "^29.1.1",
+    "tslib": "^2.8.1",
     "typescript": "^5.3.3"
   }
 }

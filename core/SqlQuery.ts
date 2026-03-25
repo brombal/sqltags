@@ -25,6 +25,7 @@ export class SqlQuery<TResult, TQueryInfo, TCursorOptions> extends Promise<
     const now = performance.now();
     const [queryText, params] = this.compile();
     this.sqlTag.emit('beforeQuery', { queryText, params });
+    const stack = new Error('[replace message]').stack;
     return this.sqlTag[_driver].query(queryText, params).then(([rows, queryInfo]) => {
       this.sqlTag.emit('afterQuery', { queryText, params, rows, queryInfo, ms: performance.now() - now });
       const result = rows as SqlQueryResult<TResult, TQueryInfo>;
@@ -32,7 +33,10 @@ export class SqlQuery<TResult, TQueryInfo, TCursorOptions> extends Promise<
       result.params = params;
       result.info = queryInfo;
       return onfulfilled!(result);
-    }, onrejected);
+    }, e => {
+      if (stack) e.stack = stack.replace('[replace message]', e.message);
+      return onrejected?.(e) as TResult2;
+    });
   }
 
   compile(params?: any[]): [string, any[]] {
