@@ -32,9 +32,9 @@ export class SqlQuery<TResult, TQueryInfo, TCursorOptions> extends Promise<
       result.query = queryText;
       result.params = params;
       result.info = queryInfo;
-      return onfulfilled!(result);
+      return onfulfilled ? onfulfilled(result) : (result as unknown as TResult1);
     }, e => {
-      if (stack) e.stack = stack.replace('[replace message]', e.message);
+      e.stack = stack?.replace('[replace message]', e.message);
       return onrejected?.(e) as TResult2;
     });
   }

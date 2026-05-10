@@ -66,11 +66,8 @@ export function createSqliteTag(client: Database) {
               });
             }
 
-            if (queue.length > 0) {
-              const row = queue.shift();
-              if (row !== undefined) return { done: false, value: row };
-            }
-
+            const row = queue.shift();
+            if (row !== undefined) return { done: false, value: row };
             return { done: true, value: undefined };
           },
         }),

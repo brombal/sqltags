@@ -27,12 +27,12 @@ function createMockSqlTag(serializeValue?: (value: unknown) => any) {
     escapeIdentifier(identifier: string) {
       return `\`${identifier.replace(/`/g, '``')}\``;
     },
-    query: jest.fn(async function (sql: string, params: any[]): Promise<[any[], MockQueryInfo]> {
+    query: vi.fn(async function (sql: string, params: any[]): Promise<[any[], MockQueryInfo]> {
       if (sql === 'SELECT bad syntax') throw new Error('bad syntax');
       // mock returns dummy data and sql and params for testing
       return [testUsers, [sql.trim(), ...params]];
     }),
-    cursor: jest.fn(async function* (_sql: string, _params: any[]): AsyncIterable<any> {
+    cursor: vi.fn(async function* (_sql: string, _params: any[]): AsyncIterable<any> {
       for (const user of testUsers) {
         yield user;
       }
@@ -362,7 +362,7 @@ describe('sqltags', () => {
   test('beforeQuery event', async () => {
     const [sql] = createMockSqlTag();
 
-    const beforeQuery = jest.fn();
+    const beforeQuery = vi.fn();
     sql.on('beforeQuery', beforeQuery);
 
     await sql`SELECT * FROM users WHERE id = ${1}`;
@@ -376,7 +376,7 @@ describe('sqltags', () => {
   test('beforeQuery event (cursors)', async () => {
     const [sql] = createMockSqlTag();
 
-    const beforeQuery = jest.fn();
+    const beforeQuery = vi.fn();
     sql.on('beforeQuery', beforeQuery);
 
     sql`SELECT * FROM users WHERE id = ${1}`.cursor();
@@ -387,10 +387,24 @@ describe('sqltags', () => {
     expect(callParams.params).toEqual([1]);
   });
 
+  test('then() with undefined onfulfilled passes result through (spec-compliant)', async () => {
+    const [sql, driver] = createMockSqlTag();
+    // Simulates .catch() which calls .then(undefined, handler) internally
+    const result = await (sql<User>`SELECT * FROM users`).then(undefined, (e) => { throw e; });
+    expect(result).toEqual(testUsers);
+    expect(driver.query).toHaveBeenCalledTimes(1);
+  });
+
+  test('.catch() on a fire-and-forget query does not throw', async () => {
+    const [sql, driver] = createMockSqlTag();
+    await sql<User>`SELECT * FROM users`.catch((e) => { throw e; });
+    expect(driver.query).toHaveBeenCalledTimes(1);
+  });
+
   test('afterQuery event', async () => {
     const [sql] = createMockSqlTag();
 
-    const afterQuery = jest.fn();
+    const afterQuery = vi.fn();
     sql.on('afterQuery', afterQuery);
 
     await sql`SELECT * FROM users WHERE id = ${1}`;

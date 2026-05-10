@@ -1,6 +1,6 @@
 {
   "name": "@sqltags/core",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Safely create & execute parameterized SQL queries using template strings 🔧✨ minimal API and works with any db driver (pg, mysql, sqlite, etc).",
   "license": "MIT",
   "author": {
