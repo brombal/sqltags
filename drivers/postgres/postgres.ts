@@ -1,12 +1,36 @@
 import { SqlTag } from '@sqltags/core';
-import { type Client, type Pool, type PoolClient, type QueryResult } from 'pg';
+import { type Pool, type PoolClient, type QueryResult, type Submittable } from 'pg';
 import Cursor, { type CursorQueryConfig } from 'pg-cursor';
 
-function isPool(client: Client | Pool): client is Pool {
+/**
+ * The minimal structural interface that `createPgTag` needs from a pg client.
+ *
+ * We intentionally avoid requiring pg's concrete `Client` class here: a
+ * connection checked out via `pool.connect()` is a `PoolClient`, which is NOT
+ * assignable to `Client` (it's missing `Client`-only members like `port`,
+ * `host`, `end`, etc.) even though it is fully compatible for our purposes.
+ * `Client`, `PoolClient`, and `Pool` all satisfy `Queryable`, so callers can
+ * pass any of them - including a connection checked out via `pool.connect()`
+ * (e.g. to run an explicit BEGIN/COMMIT transaction on a single connection) -
+ * without an unsafe cast.
+ *
+ * The two overloads mirror the subset of pg's `query` that this driver uses:
+ * the string form for ordinary parameterized queries, and the `Submittable`
+ * form for submitting a cursor.
+ */
+export interface Queryable {
+  query<T extends Submittable>(queryStream: T): T;
+  query(queryText: string, values: any[]): Promise<QueryResult>;
+}
+
+// A Pool is also Queryable, but adds connect()/idleCount for checking out a
+// dedicated connection - which the cursor path needs. Narrowing to Pool lets us
+// reach those members without requiring every caller to be a Pool.
+function isPool(client: Queryable): client is Queryable & Pool {
   return 'idleCount' in client;
 }
 
-export function createPgTag(client: Client | Pool) {
+export function createPgTag(client: Queryable) {
   return new SqlTag<QueryResult, CursorQueryConfig>({
     parameterizeValue(_value: any, _paramIndex: number) {
       return `$${_paramIndex + 1}`;
@@ -31,7 +55,7 @@ export function createPgTag(client: Client | Pool) {
     },
 
     cursor(sql: string, params: any[], options?: CursorQueryConfig): AsyncIterable<any> {
-      let _client: Client | PoolClient;
+      let _client: Queryable;
       let cursor: Cursor<any>;
       const queue: any[] = [];
 

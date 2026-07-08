@@ -62,6 +62,21 @@ const pool = new Pool({
 const sql = createPgTag(pool);
 ```
 
+You can also pass a connection checked out from a pool (a `PoolClient`), which is
+useful when you need an explicit transaction on a single connection:
+
+```ts
+const client = await pool.connect();
+try {
+  const sql = createPgTag(client);
+  await sql`BEGIN`;
+  // ...run statements on this one connection...
+  await sql`COMMIT`;
+} finally {
+  client.release();
+}
+```
+
 Query:
 
 ```ts
